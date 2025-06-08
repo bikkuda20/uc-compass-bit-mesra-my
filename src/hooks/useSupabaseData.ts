@@ -98,94 +98,97 @@ export const useUCEntries = () => {
 };
 
 export const useFundingAgencies = () => {
-  const [agencies, setAgencies] = useState<Array<{id: string, name: string}>>([]);
+  const [agencies, setAgencies] = useState<Array<{id: string, name: string, created_at?: string, updated_at?: string}>>([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    const fetchAgencies = async () => {
-      try {
-        const { data, error } = await supabase
-          .from('funding_agencies')
-          .select('id, name')
-          .order('name');
+  const fetchAgencies = async () => {
+    try {
+      setLoading(true);
+      const { data, error } = await supabase
+        .from('funding_agencies')
+        .select('id, name, created_at, updated_at')
+        .order('name');
 
-        if (error) {
-          console.error('Error fetching funding agencies:', error);
-          return;
-        }
-
-        setAgencies(data || []);
-      } catch (error) {
-        console.error('Error:', error);
-      } finally {
-        setLoading(false);
+      if (error) {
+        console.error('Error fetching funding agencies:', error);
+        return;
       }
-    };
 
+      setAgencies(data || []);
+    } catch (error) {
+      console.error('Error:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
     fetchAgencies();
   }, []);
 
-  return { agencies, loading };
+  return { agencies, loading, refetch: fetchAgencies };
 };
 
 export const useFinancialYears = () => {
-  const [years, setYears] = useState<Array<{id: string, year: string}>>([]);
+  const [years, setYears] = useState<Array<{id: string, year: string, is_active: boolean, created_at?: string}>>([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    const fetchYears = async () => {
-      try {
-        const { data, error } = await supabase
-          .from('financial_years')
-          .select('id, year')
-          .order('year', { ascending: false });
+  const fetchYears = async () => {
+    try {
+      setLoading(true);
+      const { data, error } = await supabase
+        .from('financial_years')
+        .select('id, year, is_active, created_at')
+        .order('year', { ascending: false });
 
-        if (error) {
-          console.error('Error fetching financial years:', error);
-          return;
-        }
-
-        setYears(data || []);
-      } catch (error) {
-        console.error('Error:', error);
-      } finally {
-        setLoading(false);
+      if (error) {
+        console.error('Error fetching financial years:', error);
+        return;
       }
-    };
 
+      setYears(data || []);
+    } catch (error) {
+      console.error('Error:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
     fetchYears();
   }, []);
 
-  return { years, loading };
+  return { years, loading, refetch: fetchYears };
 };
 
 export const usePrincipalInvestigators = () => {
-  const [pis, setPis] = useState<Array<{id: string, name: string, email?: string, department?: string}>>([]);
+  const [pis, setPis] = useState<Array<{id: string, name: string, email?: string, department?: string, created_at?: string}>>([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    const fetchPIs = async () => {
-      try {
-        const { data, error } = await supabase
-          .from('principal_investigators')
-          .select('id, name, email, department')
-          .order('name');
+  const fetchPIs = async () => {
+    try {
+      setLoading(true);
+      const { data, error } = await supabase
+        .from('principal_investigators')
+        .select('id, name, email, department, created_at')
+        .order('name');
 
-        if (error) {
-          console.error('Error fetching principal investigators:', error);
-          return;
-        }
-
-        setPis(data || []);
-      } catch (error) {
-        console.error('Error:', error);
-      } finally {
-        setLoading(false);
+      if (error) {
+        console.error('Error fetching principal investigators:', error);
+        return;
       }
-    };
 
+      setPis(data || []);
+    } catch (error) {
+      console.error('Error:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
     fetchPIs();
   }, []);
 
-  return { pis, loading };
+  return { pis, loading, refetch: fetchPIs };
 };

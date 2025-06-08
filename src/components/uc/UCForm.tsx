@@ -62,6 +62,8 @@ const UCForm = ({ uc, onComplete, onCancel }: UCFormProps) => {
   };
 
   const uploadFile = async (file: File, path: string) => {
+    console.log(`Uploading file: ${file.name} to path: ${path}`);
+    
     const { data, error } = await supabase.storage
       .from('uc-files')
       .upload(path, file, {
@@ -70,9 +72,11 @@ const UCForm = ({ uc, onComplete, onCancel }: UCFormProps) => {
       });
 
     if (error) {
+      console.error('Upload error:', error);
       throw error;
     }
 
+    console.log('Upload successful:', data);
     return data;
   };
 
@@ -110,17 +114,39 @@ const UCForm = ({ uc, onComplete, onCancel }: UCFormProps) => {
       if (files.ucFile) {
         const timestamp = Date.now();
         const ucPath = `uc-files/${timestamp}_${files.ucFile.name}`;
-        await uploadFile(files.ucFile, ucPath);
-        ucFilePath = ucPath;
-        ucFileName = files.ucFile.name;
+        try {
+          await uploadFile(files.ucFile, ucPath);
+          ucFilePath = ucPath;
+          ucFileName = files.ucFile.name;
+          console.log('UC file uploaded successfully');
+        } catch (uploadError) {
+          console.error('UC file upload failed:', uploadError);
+          toast({
+            title: "Upload Error",
+            description: "Failed to upload UC file. Please try again.",
+            variant: "destructive",
+          });
+          return;
+        }
       }
 
       if (files.sanctionLetter) {
         const timestamp = Date.now();
         const sanctionPath = `sanction-letters/${timestamp}_${files.sanctionLetter.name}`;
-        await uploadFile(files.sanctionLetter, sanctionPath);
-        sanctionLetterPath = sanctionPath;
-        sanctionLetterFileName = files.sanctionLetter.name;
+        try {
+          await uploadFile(files.sanctionLetter, sanctionPath);
+          sanctionLetterPath = sanctionPath;
+          sanctionLetterFileName = files.sanctionLetter.name;
+          console.log('Sanction letter uploaded successfully');
+        } catch (uploadError) {
+          console.error('Sanction letter upload failed:', uploadError);
+          toast({
+            title: "Upload Error",
+            description: "Failed to upload Sanction Letter. Please try again.",
+            variant: "destructive",
+          });
+          return;
+        }
       }
 
       const ucData = {
@@ -164,7 +190,7 @@ const UCForm = ({ uc, onComplete, onCancel }: UCFormProps) => {
 
         toast({
           title: "Success",
-          description: "UC entry created successfully",
+          description: "UC entry created successfully. Files uploaded to bucket.",
         });
       }
       
