@@ -64,8 +64,15 @@ const UCProgressTracker = ({
     const step = steps[stepIndex];
     if (step.date) return "completed";
     
-    // Find the last completed step
-    const lastCompletedIndex = steps.findLastIndex(s => s.date);
+    // Find the last completed step using a reverse loop instead of findLastIndex
+    let lastCompletedIndex = -1;
+    for (let i = steps.length - 1; i >= 0; i--) {
+      if (steps[i].date) {
+        lastCompletedIndex = i;
+        break;
+      }
+    }
+    
     if (stepIndex === lastCompletedIndex + 1) return "current";
     
     return "pending";
