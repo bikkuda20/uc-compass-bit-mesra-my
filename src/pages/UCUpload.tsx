@@ -24,8 +24,6 @@ const UCUpload = () => {
     piId: "",
     projectCode: "",
     projectType: "Project",
-    dateReceived: "",
-    dateGiven: "",
     status: "Pending",
   });
   
@@ -149,8 +147,6 @@ const UCUpload = () => {
         pi_id: formData.piId,
         project_code: formData.projectCode,
         project_type: formData.projectType,
-        date_received: formData.dateReceived || null,
-        date_given: formData.dateGiven || null,
         status: formData.status,
         uc_file_name: ucFileName,
         uc_file_path: ucFilePath,
@@ -179,8 +175,6 @@ const UCUpload = () => {
         piId: "",
         projectCode: "",
         projectType: "Project",
-        dateReceived: "",
-        dateGiven: "",
         status: "Pending",
       });
       setFiles({
@@ -383,26 +377,6 @@ const UCUpload = () => {
                     ))}
                   </SelectContent>
                 </Select>
-              </div>
-
-              <div>
-                <Label htmlFor="dateReceived">Date Received from PI</Label>
-                <Input
-                  id="dateReceived"
-                  type="date"
-                  value={formData.dateReceived}
-                  onChange={(e) => handleInputChange("dateReceived", e.target.value)}
-                />
-              </div>
-
-              <div>
-                <Label htmlFor="dateGiven">Date Given to PI</Label>
-                <Input
-                  id="dateGiven"
-                  type="date"
-                  value={formData.dateGiven}
-                  onChange={(e) => handleInputChange("dateGiven", e.target.value)}
-                />
               </div>
 
               <div>
