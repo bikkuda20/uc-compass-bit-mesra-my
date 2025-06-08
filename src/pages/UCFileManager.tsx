@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -6,14 +5,14 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Search, Download, Eye, Printer, FileText, ArrowLeft, Edit2, Save, X } from "lucide-react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { useUCEntries } from "@/hooks/useSupabaseData";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 const UCFileManager = () => {
-  const { ucs, loading, refetch } = useUCEntries();
+  const [ucs, setUcs] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
   const [filteredUcs, setFilteredUcs] = useState<any[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedFile, setSelectedFile] = useState<any>(null);
@@ -22,6 +21,48 @@ const UCFileManager = () => {
   const [editData, setEditData] = useState<any>({});
   const { toast } = useToast();
   const navigate = useNavigate();
+
+  // Fetch all UC entries for file management (not filtered by tracking status)
+  const fetchAllUCEntries = async () => {
+    try {
+      setLoading(true);
+      const { data, error } = await supabase
+        .from('uc_entries')
+        .select(`
+          *,
+          funding_agency:funding_agencies(id, name),
+          financial_year:financial_years(id, year),
+          principal_investigator:principal_investigators(id, name, email, department),
+          scheme:schemes(id, name, description)
+        `)
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error('Error fetching UC entries:', error);
+        toast({
+          title: "Error",
+          description: "Failed to fetch UC entries",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      setUcs(data || []);
+    } catch (error) {
+      console.error('Error:', error);
+      toast({
+        title: "Error",
+        description: "An unexpected error occurred",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchAllUCEntries();
+  }, []);
 
   useEffect(() => {
     let filtered = ucs;
@@ -83,7 +124,7 @@ const UCFileManager = () => {
       });
 
       setEditingId(null);
-      refetch();
+      fetchAllUCEntries(); // Refetch data
     } catch (error) {
       console.error('Error updating UC entry:', error);
       toast({
