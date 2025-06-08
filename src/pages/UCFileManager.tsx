@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -44,8 +45,8 @@ const UCFileManager = () => {
         .from('uc_entries')
         .select(`
           *,
-          agency:agencies(id, name, type),
-          financial_year:financial_years(id, year, start_date, end_date),
+          funding_agency:funding_agencies(id, name),
+          financial_year:financial_years(id, year),
           principal_investigator:principal_investigators(id, name, email, department),
           scheme:schemes(id, name, description)
         `)
@@ -120,7 +121,7 @@ const UCFileManager = () => {
       const filtered = ucEntries.filter((entry: any) =>
         entry.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         entry.principal_investigator?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        entry.agency?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        entry.funding_agency?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         entry.scheme?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         entry.financial_year?.year?.toString().includes(searchTerm)
       );
@@ -219,12 +220,11 @@ const UCFileManager = () => {
                     <Table>
                       <TableHeader>
                         <TableRow>
-                          <TableHead>Title</TableHead>
+                          <TableHead>Project Code</TableHead>
                           <TableHead>Principal Investigator</TableHead>
-                          <TableHead>Agency</TableHead>
+                          <TableHead>Funding Agency</TableHead>
                           <TableHead>Scheme</TableHead>
                           <TableHead>Financial Year</TableHead>
-                          <TableHead>Amount</TableHead>
                           <TableHead>Status</TableHead>
                           <TableHead className="text-right">Actions</TableHead>
                         </TableRow>
@@ -232,25 +232,24 @@ const UCFileManager = () => {
                       <TableBody>
                         {loading ? (
                           <TableRow>
-                            <TableCell colSpan={8} className="text-center">
+                            <TableCell colSpan={7} className="text-center">
                               Loading UC entries...
                             </TableCell>
                           </TableRow>
                         ) : filteredEntries.length === 0 ? (
                           <TableRow>
-                            <TableCell colSpan={8} className="text-center">
+                            <TableCell colSpan={7} className="text-center">
                               No UC files found.
                             </TableCell>
                           </TableRow>
                         ) : (
                           filteredEntries.map((entry: any) => (
                             <TableRow key={entry.id}>
-                              <TableCell className="font-medium">{entry.title}</TableCell>
+                              <TableCell className="font-medium">{entry.project_code}</TableCell>
                               <TableCell>{entry.principal_investigator?.name}</TableCell>
-                              <TableCell>{entry.agency?.name}</TableCell>
+                              <TableCell>{entry.funding_agency?.name}</TableCell>
                               <TableCell>{entry.scheme?.name}</TableCell>
                               <TableCell className="text-center">{entry.financial_year?.year}</TableCell>
-                              <TableCell>{formatCurrency(entry.amount)}</TableCell>
                               <TableCell>{getStatusBadge(entry.status)}</TableCell>
                               <TableCell className="text-right">
                                 <div className="flex justify-end gap-2">

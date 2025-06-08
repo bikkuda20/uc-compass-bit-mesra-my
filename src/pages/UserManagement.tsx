@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -45,34 +46,27 @@ const UserManagement = () => {
   const fetchUsers = async () => {
     try {
       setLoading(true);
-      // For now, we'll create some sample data since there are RLS policy issues
-      // This will be replaced once the RLS policies are fixed
-      const sampleUsers: User[] = [
-        {
-          id: '1',
-          email: 'admin@bitmesra.ac.in',
-          full_name: 'Admin User',
-          role: 'admin',
-          is_active: true,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-        },
-        {
-          id: '2',
-          email: 'faculty@bitmesra.ac.in',
-          full_name: 'Faculty Member',
-          role: 'user',
-          is_active: true,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-        }
-      ];
-      setUsers(sampleUsers);
+      const { data, error } = await supabase
+        .from('users')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error('Error fetching users:', error);
+        toast({
+          title: "Error",
+          description: "Failed to fetch users",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      setUsers(data || []);
     } catch (error) {
       console.error('Error fetching users:', error);
       toast({
         title: "Error",
-        description: "Failed to fetch users. Using sample data for now.",
+        description: "Failed to fetch users",
         variant: "destructive",
       });
     } finally {
@@ -85,14 +79,44 @@ const UserManagement = () => {
     
     try {
       if (editingUser) {
+        // Update existing user
+        const { error } = await supabase
+          .from('users')
+          .update({
+            email: formData.email,
+            full_name: formData.full_name,
+            role: formData.role,
+            is_active: formData.is_active,
+            updated_at: new Date().toISOString(),
+          })
+          .eq('id', editingUser.id);
+
+        if (error) {
+          throw error;
+        }
+
         toast({
-          title: "Info",
-          description: "User editing is temporarily disabled due to database configuration",
+          title: "Success",
+          description: "User updated successfully",
         });
       } else {
+        // Create new user
+        const { error } = await supabase
+          .from('users')
+          .insert([{
+            email: formData.email,
+            full_name: formData.full_name,
+            role: formData.role,
+            is_active: formData.is_active,
+          }]);
+
+        if (error) {
+          throw error;
+        }
+
         toast({
-          title: "Info", 
-          description: "User creation is temporarily disabled due to database configuration",
+          title: "Success",
+          description: "User created successfully",
         });
       }
 
@@ -104,11 +128,14 @@ const UserManagement = () => {
         role: "user",
         is_active: true,
       });
-    } catch (error) {
+      
+      // Refresh the users list
+      fetchUsers();
+    } catch (error: any) {
       console.error('Error saving user:', error);
       toast({
         title: "Error",
-        description: "Failed to save user",
+        description: error.message || "Failed to save user",
         variant: "destructive",
       });
     }
@@ -129,15 +156,27 @@ const UserManagement = () => {
     if (!confirm("Are you sure you want to delete this user?")) return;
 
     try {
+      const { error } = await supabase
+        .from('users')
+        .delete()
+        .eq('id', userId);
+
+      if (error) {
+        throw error;
+      }
+
       toast({
-        title: "Info",
-        description: "User deletion is temporarily disabled due to database configuration",
+        title: "Success",
+        description: "User deleted successfully",
       });
-    } catch (error) {
+
+      // Refresh the users list
+      fetchUsers();
+    } catch (error: any) {
       console.error('Error deleting user:', error);
       toast({
         title: "Error",
-        description: "Failed to delete user",
+        description: error.message || "Failed to delete user",
         variant: "destructive",
       });
     }
