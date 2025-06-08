@@ -1,6 +1,6 @@
 
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
-import { AppSidebar } from "@/components/Sidebar";
+import { Sidebar } from "@/components/Sidebar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Settings as SettingsIcon, Database, Upload, Shield } from "lucide-react";
 
@@ -8,7 +8,7 @@ const Settings = () => {
   return (
     <SidebarProvider>
       <div className="min-h-screen flex w-full">
-        <AppSidebar />
+        <Sidebar />
         <main className="flex-1">
           <div className="p-6 space-y-6">
             <SidebarTrigger className="mb-4" />
