@@ -9,7 +9,157 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      [_ in never]: never
+      financial_years: {
+        Row: {
+          created_at: string
+          id: string
+          is_active: boolean
+          updated_at: string
+          year: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          updated_at?: string
+          year: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          updated_at?: string
+          year?: string
+        }
+        Relationships: []
+      }
+      funding_agencies: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      principal_investigators: {
+        Row: {
+          created_at: string
+          department: string | null
+          email: string | null
+          id: string
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          department?: string | null
+          email?: string | null
+          id?: string
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          department?: string | null
+          email?: string | null
+          id?: string
+          name?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      uc_entries: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          date_given: string | null
+          date_received: string | null
+          financial_year_id: string
+          funding_agency_id: string
+          id: string
+          pi_id: string
+          project_code: string
+          sanction_letter_file_name: string
+          sanction_letter_file_path: string
+          status: string
+          uc_file_name: string
+          uc_file_path: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          date_given?: string | null
+          date_received?: string | null
+          financial_year_id: string
+          funding_agency_id: string
+          id?: string
+          pi_id: string
+          project_code: string
+          sanction_letter_file_name: string
+          sanction_letter_file_path: string
+          status?: string
+          uc_file_name: string
+          uc_file_path: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          date_given?: string | null
+          date_received?: string | null
+          financial_year_id?: string
+          funding_agency_id?: string
+          id?: string
+          pi_id?: string
+          project_code?: string
+          sanction_letter_file_name?: string
+          sanction_letter_file_path?: string
+          status?: string
+          uc_file_name?: string
+          uc_file_path?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "uc_entries_financial_year_id_fkey"
+            columns: ["financial_year_id"]
+            isOneToOne: false
+            referencedRelation: "financial_years"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "uc_entries_funding_agency_id_fkey"
+            columns: ["funding_agency_id"]
+            isOneToOne: false
+            referencedRelation: "funding_agencies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "uc_entries_pi_id_fkey"
+            columns: ["pi_id"]
+            isOneToOne: false
+            referencedRelation: "principal_investigators"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never

@@ -1,34 +1,55 @@
 
-import { useEffect, useState } from "react";
-import { Navigate } from "react-router-dom";
-import LoginForm from "@/components/auth/LoginForm";
-import Dashboard from "@/components/dashboard/Dashboard";
+import { useState } from "react";
+import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
+import { AppSidebar } from "@/components/Sidebar";
+import UCList from "@/components/uc/UCList";
+import UCForm from "@/components/uc/UCForm";
 
 const Index = () => {
-  const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
+  const [currentView, setCurrentView] = useState<'list' | 'form'>('list');
+  const [selectedUC, setSelectedUC] = useState<any>(null);
 
-  useEffect(() => {
-    const checkAuth = () => {
-      const token = localStorage.getItem("adminToken");
-      setIsAuthenticated(!!token);
-    };
-    
-    checkAuth();
-  }, []);
+  const handleNewUC = () => {
+    setSelectedUC(null);
+    setCurrentView('form');
+  };
 
-  if (isAuthenticated === null) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+  const handleEditUC = (uc: any) => {
+    setSelectedUC(uc);
+    setCurrentView('form');
+  };
+
+  const handleFormComplete = () => {
+    setCurrentView('list');
+    setSelectedUC(null);
+  };
+
+  const handleFormCancel = () => {
+    setCurrentView('list');
+    setSelectedUC(null);
+  };
+
+  return (
+    <SidebarProvider>
+      <div className="min-h-screen flex w-full">
+        <AppSidebar />
+        <main className="flex-1">
+          <div className="p-6">
+            <SidebarTrigger className="mb-4" />
+            {currentView === 'list' ? (
+              <UCList onEdit={handleEditUC} onNew={handleNewUC} />
+            ) : (
+              <UCForm 
+                uc={selectedUC} 
+                onComplete={handleFormComplete} 
+                onCancel={handleFormCancel} 
+              />
+            )}
+          </div>
+        </main>
       </div>
-    );
-  }
-
-  if (!isAuthenticated) {
-    return <LoginForm onLogin={() => setIsAuthenticated(true)} />;
-  }
-
-  return <Dashboard />;
+    </SidebarProvider>
+  );
 };
 
 export default Index;

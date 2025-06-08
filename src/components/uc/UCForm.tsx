@@ -7,6 +7,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ArrowLeft, Upload, X } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
+import { useFundingAgencies, useFinancialYears, usePrincipalInvestigators } from "@/hooks/useSupabaseData";
 
 interface UCFormProps {
   uc?: any;
@@ -15,10 +17,14 @@ interface UCFormProps {
 }
 
 const UCForm = ({ uc, onComplete, onCancel }: UCFormProps) => {
+  const { agencies } = useFundingAgencies();
+  const { years } = useFinancialYears();
+  const { pis } = usePrincipalInvestigators();
+  
   const [formData, setFormData] = useState({
-    fundingAgency: "",
-    financialYear: "",
-    piName: "",
+    fundingAgencyId: "",
+    financialYearId: "",
+    piId: "",
     projectCode: "",
     dateReceived: "",
     dateGiven: "",
@@ -36,12 +42,12 @@ const UCForm = ({ uc, onComplete, onCancel }: UCFormProps) => {
   useEffect(() => {
     if (uc) {
       setFormData({
-        fundingAgency: uc.fundingAgency || "",
-        financialYear: uc.financialYear || "",
-        piName: uc.piName || "",
-        projectCode: uc.projectCode || "",
-        dateReceived: uc.dateReceived || "",
-        dateGiven: uc.dateGiven || "",
+        fundingAgencyId: uc.funding_agency?.id || "",
+        financialYearId: uc.financial_year?.id || "",
+        piId: uc.principal_investigator?.id || "",
+        projectCode: uc.project_code || "",
+        dateReceived: uc.date_received || "",
+        dateGiven: uc.date_given || "",
         status: uc.status || "Pending",
       });
     }
@@ -55,11 +61,26 @@ const UCForm = ({ uc, onComplete, onCancel }: UCFormProps) => {
     setFiles(prev => ({ ...prev, [field]: file }));
   };
 
+  const uploadFile = async (file: File, path: string) => {
+    const { data, error } = await supabase.storage
+      .from('uc-files')
+      .upload(path, file, {
+        cacheControl: '3600',
+        upsert: false
+      });
+
+    if (error) {
+      throw error;
+    }
+
+    return data;
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     // Validation
-    if (!formData.fundingAgency || !formData.financialYear || !formData.piName || !formData.projectCode) {
+    if (!formData.fundingAgencyId || !formData.financialYearId || !formData.piId || !formData.projectCode) {
       toast({
         title: "Validation Error",
         description: "Please fill in all required fields",
@@ -80,14 +101,76 @@ const UCForm = ({ uc, onComplete, onCancel }: UCFormProps) => {
     setIsSubmitting(true);
 
     try {
-      // Here you would implement the actual API call
-      await new Promise(resolve => setTimeout(resolve, 2000)); // Simulate API call
-      
-      console.log("Form Data:", formData);
-      console.log("Files:", files);
+      let ucFilePath = uc?.uc_file_path || "";
+      let ucFileName = uc?.uc_file_name || "";
+      let sanctionLetterPath = uc?.sanction_letter_file_path || "";
+      let sanctionLetterFileName = uc?.sanction_letter_file_name || "";
+
+      // Upload new files if provided
+      if (files.ucFile) {
+        const timestamp = Date.now();
+        const ucPath = `uc-files/${timestamp}_${files.ucFile.name}`;
+        await uploadFile(files.ucFile, ucPath);
+        ucFilePath = ucPath;
+        ucFileName = files.ucFile.name;
+      }
+
+      if (files.sanctionLetter) {
+        const timestamp = Date.now();
+        const sanctionPath = `sanction-letters/${timestamp}_${files.sanctionLetter.name}`;
+        await uploadFile(files.sanctionLetter, sanctionPath);
+        sanctionLetterPath = sanctionPath;
+        sanctionLetterFileName = files.sanctionLetter.name;
+      }
+
+      const ucData = {
+        funding_agency_id: formData.fundingAgencyId,
+        financial_year_id: formData.financialYearId,
+        pi_id: formData.piId,
+        project_code: formData.projectCode,
+        date_received: formData.dateReceived || null,
+        date_given: formData.dateGiven || null,
+        status: formData.status,
+        uc_file_name: ucFileName,
+        uc_file_path: ucFilePath,
+        sanction_letter_file_name: sanctionLetterFileName,
+        sanction_letter_file_path: sanctionLetterPath,
+        updated_at: new Date().toISOString(),
+      };
+
+      if (uc) {
+        // Update existing UC
+        const { error } = await supabase
+          .from('uc_entries')
+          .update(ucData)
+          .eq('id', uc.id);
+
+        if (error) throw error;
+
+        toast({
+          title: "Success",
+          description: "UC entry updated successfully",
+        });
+      } else {
+        // Create new UC
+        const { error } = await supabase
+          .from('uc_entries')
+          .insert([{
+            ...ucData,
+            created_at: new Date().toISOString(),
+          }]);
+
+        if (error) throw error;
+
+        toast({
+          title: "Success",
+          description: "UC entry created successfully",
+        });
+      }
       
       onComplete();
     } catch (error) {
+      console.error('Error saving UC entry:', error);
       toast({
         title: "Error",
         description: "Failed to save UC entry",
@@ -98,8 +181,6 @@ const UCForm = ({ uc, onComplete, onCancel }: UCFormProps) => {
     }
   };
 
-  const fundingAgencies = ["DST", "DRDO", "ISRO", "UGC", "AICTE", "CSIR", "DBT"];
-  const financialYears = ["2024-2025", "2023-2024", "2022-2023", "2021-2022"];
   const statuses = ["Pending", "Submitted", "Verified"];
 
   const FileUploadCard = ({ 
@@ -190,16 +271,16 @@ const UCForm = ({ uc, onComplete, onCancel }: UCFormProps) => {
               <div>
                 <Label htmlFor="fundingAgency">Funding Agency *</Label>
                 <Select 
-                  value={formData.fundingAgency} 
-                  onValueChange={(value) => handleInputChange("fundingAgency", value)}
+                  value={formData.fundingAgencyId} 
+                  onValueChange={(value) => handleInputChange("fundingAgencyId", value)}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Select funding agency" />
                   </SelectTrigger>
                   <SelectContent>
-                    {fundingAgencies.map((agency) => (
-                      <SelectItem key={agency} value={agency}>
-                        {agency}
+                    {agencies.map((agency) => (
+                      <SelectItem key={agency.id} value={agency.id}>
+                        {agency.name}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -209,16 +290,16 @@ const UCForm = ({ uc, onComplete, onCancel }: UCFormProps) => {
               <div>
                 <Label htmlFor="financialYear">Financial Year *</Label>
                 <Select 
-                  value={formData.financialYear} 
-                  onValueChange={(value) => handleInputChange("financialYear", value)}
+                  value={formData.financialYearId} 
+                  onValueChange={(value) => handleInputChange("financialYearId", value)}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Select financial year" />
                   </SelectTrigger>
                   <SelectContent>
-                    {financialYears.map((year) => (
-                      <SelectItem key={year} value={year}>
-                        {year}
+                    {years.map((year) => (
+                      <SelectItem key={year.id} value={year.id}>
+                        {year.year}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -226,14 +307,22 @@ const UCForm = ({ uc, onComplete, onCancel }: UCFormProps) => {
               </div>
 
               <div>
-                <Label htmlFor="piName">PI Name *</Label>
-                <Input
-                  id="piName"
-                  value={formData.piName}
-                  onChange={(e) => handleInputChange("piName", e.target.value)}
-                  placeholder="Enter PI name"
-                  required
-                />
+                <Label htmlFor="piName">Principal Investigator *</Label>
+                <Select 
+                  value={formData.piId} 
+                  onValueChange={(value) => handleInputChange("piId", value)}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select PI" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {pis.map((pi) => (
+                      <SelectItem key={pi.id} value={pi.id}>
+                        {pi.name} {pi.department && `(${pi.department})`}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
 
               <div>
@@ -303,13 +392,13 @@ const UCForm = ({ uc, onComplete, onCancel }: UCFormProps) => {
             title="UC File *"
             field="ucFile"
             currentFile={files.ucFile}
-            existingFileName={uc?.ucFile}
+            existingFileName={uc?.uc_file_name}
           />
           <FileUploadCard
             title="Sanction Letter *"
             field="sanctionLetter"
             currentFile={files.sanctionLetter}
-            existingFileName={uc?.sanctionLetter}
+            existingFileName={uc?.sanction_letter_file_name}
           />
         </div>
 

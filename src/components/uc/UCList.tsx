@@ -5,8 +5,9 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Search, Download, Edit, Filter } from "lucide-react";
+import { Search, Download, Edit, Filter, Loader2 } from "lucide-react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { useUCEntries, useFundingAgencies, useFinancialYears } from "@/hooks/useSupabaseData";
 
 interface UCListProps {
   onEdit: (uc: any) => void;
@@ -14,7 +15,10 @@ interface UCListProps {
 }
 
 const UCList = ({ onEdit, onNew }: UCListProps) => {
-  const [ucs, setUcs] = useState<any[]>([]);
+  const { ucs, loading: ucsLoading, refetch } = useUCEntries();
+  const { agencies } = useFundingAgencies();
+  const { years } = useFinancialYears();
+  
   const [filteredUcs, setFilteredUcs] = useState<any[]>([]);
   const [filters, setFilters] = useState({
     search: "",
@@ -23,70 +27,23 @@ const UCList = ({ onEdit, onNew }: UCListProps) => {
     status: "all",
   });
 
-  // Mock data - replace with actual API calls
-  useEffect(() => {
-    const mockUCs = [
-      {
-        id: 1,
-        fundingAgency: "DST",
-        financialYear: "2024-2025",
-        piName: "Dr. Rajesh Kumar",
-        projectCode: "DST/2024/001",
-        status: "Pending",
-        dateReceived: "2024-03-15",
-        dateGiven: "",
-        ucFile: "uc_rajesh_dst_2024.pdf",
-        sanctionLetter: "sanction_rajesh_dst_2024.pdf",
-        createdAt: "2024-03-10",
-      },
-      {
-        id: 2,
-        fundingAgency: "DRDO",
-        financialYear: "2024-2025",
-        piName: "Dr. Priya Sharma",
-        projectCode: "DRDO/2024/002",
-        status: "Submitted",
-        dateReceived: "2024-02-20",
-        dateGiven: "2024-03-01",
-        ucFile: "uc_priya_drdo_2024.pdf",
-        sanctionLetter: "sanction_priya_drdo_2024.pdf",
-        createdAt: "2024-02-15",
-      },
-      {
-        id: 3,
-        fundingAgency: "ISRO",
-        financialYear: "2023-2024",
-        piName: "Dr. Amit Singh",
-        projectCode: "ISRO/2023/003",
-        status: "Verified",
-        dateReceived: "2024-01-10",
-        dateGiven: "2024-01-25",
-        ucFile: "uc_amit_isro_2023.pdf",
-        sanctionLetter: "sanction_amit_isro_2023.pdf",
-        createdAt: "2024-01-05",
-      },
-    ];
-    setUcs(mockUCs);
-    setFilteredUcs(mockUCs);
-  }, []);
-
   useEffect(() => {
     let filtered = ucs;
 
     if (filters.search) {
       filtered = filtered.filter(
         (uc) =>
-          uc.piName.toLowerCase().includes(filters.search.toLowerCase()) ||
-          uc.projectCode.toLowerCase().includes(filters.search.toLowerCase())
+          uc.principal_investigator.name.toLowerCase().includes(filters.search.toLowerCase()) ||
+          uc.project_code.toLowerCase().includes(filters.search.toLowerCase())
       );
     }
 
     if (filters.fundingAgency && filters.fundingAgency !== "all") {
-      filtered = filtered.filter((uc) => uc.fundingAgency === filters.fundingAgency);
+      filtered = filtered.filter((uc) => uc.funding_agency.name === filters.fundingAgency);
     }
 
     if (filters.financialYear && filters.financialYear !== "all") {
-      filtered = filtered.filter((uc) => uc.financialYear === filters.financialYear);
+      filtered = filtered.filter((uc) => uc.financial_year.year === filters.financialYear);
     }
 
     if (filters.status && filters.status !== "all") {
@@ -111,9 +68,16 @@ const UCList = ({ onEdit, onNew }: UCListProps) => {
     );
   };
 
-  const fundingAgencies = ["DST", "DRDO", "ISRO", "UGC", "AICTE"];
-  const financialYears = ["2024-2025", "2023-2024", "2022-2023"];
   const statuses = ["Pending", "Submitted", "Verified"];
+
+  if (ucsLoading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <Loader2 className="w-8 h-8 animate-spin" />
+        <span className="ml-2">Loading UC entries...</span>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -152,9 +116,9 @@ const UCList = ({ onEdit, onNew }: UCListProps) => {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Agencies</SelectItem>
-                {fundingAgencies.map((agency) => (
-                  <SelectItem key={agency} value={agency}>
-                    {agency}
+                {agencies.map((agency) => (
+                  <SelectItem key={agency.id} value={agency.name}>
+                    {agency.name}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -168,9 +132,9 @@ const UCList = ({ onEdit, onNew }: UCListProps) => {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Years</SelectItem>
-                {financialYears.map((year) => (
-                  <SelectItem key={year} value={year}>
-                    {year}
+                {years.map((year) => (
+                  <SelectItem key={year.id} value={year.year}>
+                    {year.year}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -214,13 +178,13 @@ const UCList = ({ onEdit, onNew }: UCListProps) => {
             <TableBody>
               {filteredUcs.map((uc) => (
                 <TableRow key={uc.id}>
-                  <TableCell className="font-medium">{uc.fundingAgency}</TableCell>
-                  <TableCell>{uc.financialYear}</TableCell>
-                  <TableCell>{uc.piName}</TableCell>
-                  <TableCell>{uc.projectCode}</TableCell>
+                  <TableCell className="font-medium">{uc.funding_agency.name}</TableCell>
+                  <TableCell>{uc.financial_year.year}</TableCell>
+                  <TableCell>{uc.principal_investigator.name}</TableCell>
+                  <TableCell>{uc.project_code}</TableCell>
                   <TableCell>{getStatusBadge(uc.status)}</TableCell>
-                  <TableCell>{uc.dateReceived || "-"}</TableCell>
-                  <TableCell>{uc.dateGiven || "-"}</TableCell>
+                  <TableCell>{uc.date_received || "-"}</TableCell>
+                  <TableCell>{uc.date_given || "-"}</TableCell>
                   <TableCell>
                     <div className="flex space-x-2">
                       <Button
@@ -233,7 +197,7 @@ const UCList = ({ onEdit, onNew }: UCListProps) => {
                       <Button
                         size="sm"
                         variant="outline"
-                        onClick={() => console.log("Download UC:", uc.ucFile)}
+                        onClick={() => console.log("Download UC:", uc.uc_file_name)}
                       >
                         <Download className="w-3 h-3" />
                       </Button>
@@ -246,7 +210,7 @@ const UCList = ({ onEdit, onNew }: UCListProps) => {
         </CardContent>
       </Card>
 
-      {filteredUcs.length === 0 && (
+      {filteredUcs.length === 0 && !ucsLoading && (
         <div className="text-center py-8">
           <p className="text-slate-500">No UCs found matching your criteria.</p>
         </div>
