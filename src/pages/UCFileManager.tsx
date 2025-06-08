@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Search, Download, Eye, Printer, FileText, ArrowLeft, Edit2, Save, X } from "lucide-react";
+import { Search, Download, Eye, Printer, FileText, ArrowLeft, Edit2, Save, X, Trash2 } from "lucide-react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -22,7 +22,6 @@ const UCFileManager = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
 
-  // Fetch all UC entries for file management (not filtered by tracking status)
   const fetchAllUCEntries = async () => {
     try {
       setLoading(true);
@@ -138,6 +137,44 @@ const UCFileManager = () => {
   const handleCancel = () => {
     setEditingId(null);
     setEditData({});
+  };
+
+  const handleDelete = async (uc: any) => {
+    if (!confirm(`Are you sure you want to delete the UC entry for ${uc.project_code}?`)) {
+      return;
+    }
+
+    try {
+      // Delete files from storage first
+      if (uc.uc_file_path) {
+        await supabase.storage.from('uc-files').remove([uc.uc_file_path]);
+      }
+      if (uc.sanction_letter_file_path) {
+        await supabase.storage.from('uc-files').remove([uc.sanction_letter_file_path]);
+      }
+
+      // Delete the database entry
+      const { error } = await supabase
+        .from('uc_entries')
+        .delete()
+        .eq('id', uc.id);
+
+      if (error) throw error;
+
+      toast({
+        title: "Success",
+        description: "UC entry deleted successfully",
+      });
+
+      fetchAllUCEntries(); // Refetch data
+    } catch (error) {
+      console.error('Error deleting UC entry:', error);
+      toast({
+        title: "Error",
+        description: "Failed to delete UC entry",
+        variant: "destructive",
+      });
+    }
   };
 
   const handlePreview = async (uc: any) => {
@@ -284,6 +321,7 @@ const UCFileManager = () => {
                     <TableHead>PI Name</TableHead>
                     <TableHead>Deptt. Name</TableHead>
                     <TableHead>Agency</TableHead>
+                    <TableHead>Financial Year</TableHead>
                     <TableHead>Scheme</TableHead>
                     <TableHead>Project Code</TableHead>
                     <TableHead>Status</TableHead>
@@ -297,6 +335,7 @@ const UCFileManager = () => {
                         <TableCell className="font-medium">{uc.principal_investigator.name}</TableCell>
                         <TableCell>{uc.principal_investigator.department || 'N/A'}</TableCell>
                         <TableCell>{uc.funding_agency.name}</TableCell>
+                        <TableCell>{uc.financial_year.year}</TableCell>
                         <TableCell>
                           {editingId === uc.id ? (
                             <Input
@@ -396,6 +435,14 @@ const UCFileManager = () => {
                                 >
                                   <Printer className="w-3 h-3" />
                                 </Button>
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => handleDelete(uc)}
+                                  className="flex items-center text-red-600 hover:text-red-700 hover:bg-red-50"
+                                >
+                                  <Trash2 className="w-3 h-3" />
+                                </Button>
                               </>
                             )}
                           </div>
@@ -404,7 +451,7 @@ const UCFileManager = () => {
                     ))
                   ) : (
                     <TableRow>
-                      <TableCell colSpan={7} className="text-center py-8">
+                      <TableCell colSpan={8} className="text-center py-8">
                         <FileText className="w-12 h-12 mx-auto text-gray-400 mb-4" />
                         <p className="text-gray-500">No UC files found</p>
                       </TableCell>

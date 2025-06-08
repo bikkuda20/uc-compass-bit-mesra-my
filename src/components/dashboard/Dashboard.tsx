@@ -1,15 +1,18 @@
-
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Users, Building, Calendar, FileText, TrendingUp, Clock, CheckCircle } from "lucide-react";
-import { useUCEntries, useFundingAgencies, useFinancialYears, usePrincipalInvestigators } from "@/hooks/useSupabaseData";
+import { useFundingAgencies, useFinancialYears, usePrincipalInvestigators } from "@/hooks/useSupabaseData";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
 
 const Dashboard = () => {
-  const { ucs, loading: ucsLoading } = useUCEntries();
+  const [ucs, setUcs] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
   const { agencies } = useFundingAgencies();
   const { years } = useFinancialYears();
   const { pis } = usePrincipalInvestigators();
+  const { toast } = useToast();
 
   const [stats, setStats] = useState({
     totalUCs: 0,
@@ -17,6 +20,48 @@ const Dashboard = () => {
     verifiedUCs: 0,
     submittedUCs: 0,
   });
+
+  // Fetch all UC entries for dashboard (not filtered by tracking status)
+  const fetchAllUCEntries = async () => {
+    try {
+      setLoading(true);
+      const { data, error } = await supabase
+        .from('uc_entries')
+        .select(`
+          *,
+          funding_agency:funding_agencies(id, name),
+          financial_year:financial_years(id, year),
+          principal_investigator:principal_investigators(id, name, email, department),
+          scheme:schemes(id, name, description)
+        `)
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error('Error fetching UC entries:', error);
+        toast({
+          title: "Error",
+          description: "Failed to fetch UC entries",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      setUcs(data || []);
+    } catch (error) {
+      console.error('Error:', error);
+      toast({
+        title: "Error",
+        description: "An unexpected error occurred",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchAllUCEntries();
+  }, []);
 
   useEffect(() => {
     if (ucs.length > 0) {
@@ -59,7 +104,7 @@ const Dashboard = () => {
     );
   };
 
-  if (ucsLoading) {
+  if (loading) {
     return (
       <div className="p-6 space-y-6">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
