@@ -186,6 +186,11 @@ const UCProgressTracker = ({
                   {step.shortLabel}
                 </div>
               )}
+              {step.date && (
+                <div className="text-xs text-gray-500 mt-1">
+                  {new Date(step.date).toLocaleDateString()}
+                </div>
+              )}
             </div>
             {index < steps.length - 1 && (
               <div className={cn(

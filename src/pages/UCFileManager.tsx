@@ -22,7 +22,7 @@ const UCFileManager = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
 
-  const fetchAllUCEntries = async () => {
+  const fetchUploadedUCEntries = async () => {
     try {
       setLoading(true);
       const { data, error } = await supabase
@@ -34,6 +34,7 @@ const UCFileManager = () => {
           principal_investigator:principal_investigators(id, name, email, department),
           scheme:schemes(id, name, description)
         `)
+        .is('uc_received_date', null) // Only show uploaded UCs (not received from PI)
         .order('created_at', { ascending: false });
 
       if (error) {
@@ -60,7 +61,7 @@ const UCFileManager = () => {
   };
 
   useEffect(() => {
-    fetchAllUCEntries();
+    fetchUploadedUCEntries();
   }, []);
 
   useEffect(() => {
@@ -283,6 +284,18 @@ const UCFileManager = () => {
         </div>
       </div>
 
+      {/* Info Card */}
+      <Card className="shadow-lg border-0 bg-purple-50/80 backdrop-blur-sm border-purple-200">
+        <CardContent className="p-4">
+          <div className="flex items-center space-x-2 text-purple-700">
+            <FileText className="w-5 h-5" />
+            <p className="text-sm font-medium">
+              UC File Manager shows only uploaded UCs. UCs received from PIs for tracking are managed separately in UC Tracker.
+            </p>
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Search Bar */}
       <Card className="shadow-lg border-0">
         <CardHeader>
@@ -453,7 +466,7 @@ const UCFileManager = () => {
                     <TableRow>
                       <TableCell colSpan={8} className="text-center py-8">
                         <FileText className="w-12 h-12 mx-auto text-gray-400 mb-4" />
-                        <p className="text-gray-500">No UC files found</p>
+                        <p className="text-gray-500">No uploaded UC files found</p>
                       </TableCell>
                     </TableRow>
                   )}
