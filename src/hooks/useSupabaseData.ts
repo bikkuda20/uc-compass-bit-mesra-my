@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -64,6 +65,7 @@ export const useUCEntries = () => {
           principal_investigator:principal_investigators(id, name, email, department),
           scheme:schemes(id, name, description)
         `)
+        .not('uc_received_date', 'is', null) // Only show UCs that have been received from PI (tracking enabled)
         .order('created_at', { ascending: false });
 
       if (error) {

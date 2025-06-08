@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -120,7 +119,7 @@ const UCList = () => {
       <div className="flex items-center justify-center h-64 bg-gradient-to-br from-blue-50 to-indigo-100 rounded-lg">
         <div className="text-center">
           <Loader2 className="w-8 h-8 animate-spin text-blue-600 mx-auto mb-2" />
-          <span className="text-blue-700 font-medium">Loading UC entries...</span>
+          <span className="text-blue-700 font-medium">Loading UC trackers...</span>
         </div>
       </div>
     );
@@ -163,6 +162,18 @@ const UCList = () => {
           Create UC Tracker
         </Button>
       </div>
+
+      {/* Info Card */}
+      <Card className="shadow-lg border-0 bg-blue-50/80 backdrop-blur-sm border-blue-200">
+        <CardContent className="p-4">
+          <div className="flex items-center space-x-2 text-blue-700">
+            <FileText className="w-5 h-5" />
+            <p className="text-sm font-medium">
+              UC Tracker shows only UCs received from PIs for workflow tracking. Uploaded UCs are managed separately in UC Files.
+            </p>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Filters */}
       <Card className="shadow-lg border-0 bg-white/80 backdrop-blur-sm">
@@ -320,8 +331,8 @@ const UCList = () => {
         <Card className="shadow-lg border-0 bg-white/80 backdrop-blur-sm">
           <CardContent className="text-center py-12">
             <FileText className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-            <p className="text-gray-500 text-lg">No UCs found matching your criteria.</p>
-            <p className="text-gray-400 text-sm mt-2">Try adjusting your filters or create a new UC tracker.</p>
+            <p className="text-gray-500 text-lg">No UC trackers found.</p>
+            <p className="text-gray-400 text-sm mt-2">Create a new UC tracker to start tracking UCs received from PIs.</p>
           </CardContent>
         </Card>
       )}
