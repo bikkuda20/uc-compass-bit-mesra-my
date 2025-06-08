@@ -162,7 +162,7 @@ export const useFinancialYears = () => {
 };
 
 export const usePrincipalInvestigators = () => {
-  const [pis, setPis] = useState<Array<{id: string, name: string, email?: string, department?: string, created_at?: string}>>([]);
+  const [pis, setPis] = useState<Array<{id: string, name: string, email?: string, department?: string, project_code?: string, created_at?: string}>>([]);
   const [loading, setLoading] = useState(true);
 
   const fetchPIs = async () => {
@@ -170,7 +170,7 @@ export const usePrincipalInvestigators = () => {
       setLoading(true);
       const { data, error } = await supabase
         .from('principal_investigators')
-        .select('id, name, email, department, created_at')
+        .select('id, name, email, department, project_code, created_at')
         .order('name');
 
       if (error) {
