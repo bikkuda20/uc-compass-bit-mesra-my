@@ -6,6 +6,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Index from "./pages/Index";
 import UCTracker from "./pages/UCTracker";
+import UCUpload from "./pages/UCUpload";
 import UCFileManager from "./pages/UCFileManager";
 import Investigators from "./pages/Investigators";
 import Agencies from "./pages/Agencies";
@@ -24,6 +25,7 @@ const App = () => (
         <Routes>
           <Route path="/" element={<Index />} />
           <Route path="/uc-tracker" element={<UCTracker />} />
+          <Route path="/uc-upload" element={<UCUpload />} />
           <Route path="/uc-files" element={<UCFileManager />} />
           <Route path="/investigators" element={<Investigators />} />
           <Route path="/agencies" element={<Agencies />} />
