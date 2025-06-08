@@ -5,19 +5,16 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Search, Download, Edit, Filter, Loader2 } from "lucide-react";
+import { Search, Download, Edit, Filter, Loader2, Plus, ArrowLeft } from "lucide-react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useUCEntries, useFundingAgencies, useFinancialYears } from "@/hooks/useSupabaseData";
+import { useNavigate } from "react-router-dom";
 
-interface UCListProps {
-  onEdit: (uc: any) => void;
-  onNew: () => void;
-}
-
-const UCList = ({ onEdit, onNew }: UCListProps) => {
+const UCList = () => {
   const { ucs, loading: ucsLoading, refetch } = useUCEntries();
   const { agencies } = useFundingAgencies();
   const { years } = useFinancialYears();
+  const navigate = useNavigate();
   
   const [filteredUcs, setFilteredUcs] = useState<any[]>([]);
   const [filters, setFilters] = useState({
@@ -25,6 +22,7 @@ const UCList = ({ onEdit, onNew }: UCListProps) => {
     fundingAgency: "all",
     financialYear: "all",
     status: "all",
+    projectType: "all",
   });
 
   useEffect(() => {
@@ -50,6 +48,10 @@ const UCList = ({ onEdit, onNew }: UCListProps) => {
       filtered = filtered.filter((uc) => uc.status === filters.status);
     }
 
+    if (filters.projectType && filters.projectType !== "all") {
+      filtered = filtered.filter((uc) => uc.project_type === filters.projectType);
+    }
+
     setFilteredUcs(filtered);
   }, [filters, ucs]);
 
@@ -69,6 +71,7 @@ const UCList = ({ onEdit, onNew }: UCListProps) => {
   };
 
   const statuses = ["Pending", "Submitted", "Verified"];
+  const projectTypes = ["Project", "Workshop", "Seminar", "Symposium", "Conference"];
 
   if (ucsLoading) {
     return (
@@ -80,10 +83,17 @@ const UCList = ({ onEdit, onNew }: UCListProps) => {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h2 className="text-2xl font-bold text-slate-800">UC Tracker</h2>
-        <Button onClick={onNew} className="bg-blue-600 hover:bg-blue-700">
+    <div className="p-6 space-y-6">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center space-x-4">
+          <Button variant="ghost" onClick={() => navigate('/')}>
+            <ArrowLeft className="w-4 h-4 mr-2" />
+            Back to Dashboard
+          </Button>
+          <h2 className="text-2xl font-bold text-slate-800">UC Tracker</h2>
+        </div>
+        <Button onClick={() => navigate('/uc-upload')} className="bg-blue-600 hover:bg-blue-700">
+          <Plus className="w-4 h-4 mr-2" />
           Add New UC
         </Button>
       </div>
@@ -97,7 +107,7 @@ const UCList = ({ onEdit, onNew }: UCListProps) => {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 w-4 h-4" />
               <Input
@@ -140,6 +150,22 @@ const UCList = ({ onEdit, onNew }: UCListProps) => {
               </SelectContent>
             </Select>
             <Select
+              value={filters.projectType}
+              onValueChange={(value) => setFilters({ ...filters, projectType: value })}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Project Type" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Types</SelectItem>
+                {projectTypes.map((type) => (
+                  <SelectItem key={type} value={type}>
+                    {type}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Select
               value={filters.status}
               onValueChange={(value) => setFilters({ ...filters, status: value })}
             >
@@ -166,9 +192,11 @@ const UCList = ({ onEdit, onNew }: UCListProps) => {
             <TableHeader>
               <TableRow>
                 <TableHead>Funding Agency</TableHead>
+                <TableHead>Scheme</TableHead>
                 <TableHead>Financial Year</TableHead>
                 <TableHead>PI Name</TableHead>
                 <TableHead>Project Code</TableHead>
+                <TableHead>Project Type</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead>Date Received</TableHead>
                 <TableHead>Date Given</TableHead>
@@ -179,9 +207,11 @@ const UCList = ({ onEdit, onNew }: UCListProps) => {
               {filteredUcs.map((uc) => (
                 <TableRow key={uc.id}>
                   <TableCell className="font-medium">{uc.funding_agency.name}</TableCell>
+                  <TableCell>{uc.scheme?.name || "-"}</TableCell>
                   <TableCell>{uc.financial_year.year}</TableCell>
                   <TableCell>{uc.principal_investigator.name}</TableCell>
                   <TableCell>{uc.project_code}</TableCell>
+                  <TableCell>{uc.project_type}</TableCell>
                   <TableCell>{getStatusBadge(uc.status)}</TableCell>
                   <TableCell>{uc.date_received || "-"}</TableCell>
                   <TableCell>{uc.date_given || "-"}</TableCell>
@@ -190,7 +220,7 @@ const UCList = ({ onEdit, onNew }: UCListProps) => {
                       <Button
                         size="sm"
                         variant="outline"
-                        onClick={() => onEdit(uc)}
+                        onClick={() => console.log("Edit UC:", uc.id)}
                       >
                         <Edit className="w-3 h-3" />
                       </Button>

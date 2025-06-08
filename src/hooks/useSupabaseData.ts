@@ -19,7 +19,13 @@ export interface UCEntry {
     email?: string;
     department?: string;
   };
+  scheme?: {
+    id: string;
+    name: string;
+    description?: string;
+  };
   project_code: string;
+  project_type: string;
   uc_file_name: string;
   uc_file_path: string;
   sanction_letter_file_name: string;
@@ -45,7 +51,8 @@ export const useUCEntries = () => {
           *,
           funding_agency:funding_agencies(id, name),
           financial_year:financial_years(id, year),
-          principal_investigator:principal_investigators(id, name, email, department)
+          principal_investigator:principal_investigators(id, name, email, department),
+          scheme:schemes(id, name, description)
         `)
         .order('created_at', { ascending: false });
 
@@ -65,7 +72,9 @@ export const useUCEntries = () => {
         funding_agency: item.funding_agency,
         financial_year: item.financial_year,
         principal_investigator: item.principal_investigator,
+        scheme: item.scheme,
         project_code: item.project_code,
+        project_type: item.project_type || 'Project',
         uc_file_name: item.uc_file_name,
         uc_file_path: item.uc_file_path,
         sanction_letter_file_name: item.sanction_letter_file_name,
@@ -127,6 +136,44 @@ export const useFundingAgencies = () => {
   }, []);
 
   return { agencies, loading, refetch: fetchAgencies };
+};
+
+export const useSchemes = (fundingAgencyId?: string) => {
+  const [schemes, setSchemes] = useState<Array<{id: string, name: string, description?: string, funding_agency_id: string}>>([]);
+  const [loading, setLoading] = useState(true);
+
+  const fetchSchemes = async () => {
+    try {
+      setLoading(true);
+      let query = supabase
+        .from('schemes')
+        .select('id, name, description, funding_agency_id')
+        .order('name');
+
+      if (fundingAgencyId) {
+        query = query.eq('funding_agency_id', fundingAgencyId);
+      }
+
+      const { data, error } = await query;
+
+      if (error) {
+        console.error('Error fetching schemes:', error);
+        return;
+      }
+
+      setSchemes(data || []);
+    } catch (error) {
+      console.error('Error:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchSchemes();
+  }, [fundingAgencyId]);
+
+  return { schemes, loading, refetch: fetchSchemes };
 };
 
 export const useFinancialYears = () => {

@@ -84,6 +84,41 @@ export type Database = {
         }
         Relationships: []
       }
+      schemes: {
+        Row: {
+          created_at: string
+          description: string | null
+          funding_agency_id: string | null
+          id: string
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          funding_agency_id?: string | null
+          id?: string
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          funding_agency_id?: string | null
+          id?: string
+          name?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "schemes_funding_agency_id_fkey"
+            columns: ["funding_agency_id"]
+            isOneToOne: false
+            referencedRelation: "funding_agencies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       uc_entries: {
         Row: {
           created_at: string
@@ -95,8 +130,10 @@ export type Database = {
           id: string
           pi_id: string
           project_code: string
+          project_type: string | null
           sanction_letter_file_name: string
           sanction_letter_file_path: string
+          scheme_id: string | null
           status: string
           uc_file_name: string
           uc_file_path: string
@@ -113,8 +150,10 @@ export type Database = {
           id?: string
           pi_id: string
           project_code: string
+          project_type?: string | null
           sanction_letter_file_name: string
           sanction_letter_file_path: string
+          scheme_id?: string | null
           status?: string
           uc_file_name: string
           uc_file_path: string
@@ -131,8 +170,10 @@ export type Database = {
           id?: string
           pi_id?: string
           project_code?: string
+          project_type?: string | null
           sanction_letter_file_name?: string
           sanction_letter_file_path?: string
+          scheme_id?: string | null
           status?: string
           uc_file_name?: string
           uc_file_path?: string
@@ -159,6 +200,13 @@ export type Database = {
             columns: ["pi_id"]
             isOneToOne: false
             referencedRelation: "principal_investigators"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "uc_entries_scheme_id_fkey"
+            columns: ["scheme_id"]
+            isOneToOne: false
+            referencedRelation: "schemes"
             referencedColumns: ["id"]
           },
         ]
