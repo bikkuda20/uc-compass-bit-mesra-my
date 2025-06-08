@@ -28,7 +28,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { FileText, Search, Download, Trash2, Calendar } from "lucide-react";
+import { FileText, Search, Download, Trash2, Calendar, Eye, Edit, Printer } from "lucide-react";
 
 const UCFileManager = () => {
   const [ucEntries, setUcEntries] = useState([]);
@@ -119,7 +119,7 @@ const UCFileManager = () => {
   useEffect(() => {
     if (searchTerm) {
       const filtered = ucEntries.filter((entry: any) =>
-        entry.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        entry.project_code?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         entry.principal_investigator?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         entry.funding_agency?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         entry.scheme?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -164,8 +164,59 @@ const UCFileManager = () => {
     }
   };
 
+  const previewFile = async (filePath: string) => {
+    try {
+      const { data, error } = await supabase.storage
+        .from('uc_files')
+        .createSignedUrl(filePath, 60); // 60 seconds expiry
+
+      if (error) {
+        throw error;
+      }
+
+      window.open(data.signedUrl, '_blank');
+    } catch (error: any) {
+      console.error('Error previewing file:', error);
+      toast({
+        title: "Error",
+        description: "Failed to preview UC file",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const printFile = async (filePath: string) => {
+    try {
+      const { data, error } = await supabase.storage
+        .from('uc_files')
+        .createSignedUrl(filePath, 60);
+
+      if (error) {
+        throw error;
+      }
+
+      const printWindow = window.open(data.signedUrl, '_blank');
+      if (printWindow) {
+        printWindow.onload = () => {
+          printWindow.print();
+        };
+      }
+    } catch (error: any) {
+      console.error('Error printing file:', error);
+      toast({
+        title: "Error",
+        description: "Failed to print UC file",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const editUCEntry = (ucId: string) => {
+    navigate(`/uc-upload?edit=${ucId}`);
+  };
+
   const getStatusBadge = (status: string) => {
-    let badgeColor = "neutral"; // Default color
+    let badgeColor = "neutral";
     switch (status) {
       case "pending":
         badgeColor = "yellow";
@@ -188,13 +239,6 @@ const UCFileManager = () => {
     );
   };
 
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-IN', {
-      style: 'currency',
-      currency: 'INR',
-    }).format(amount);
-  };
-
   return (
     <SidebarProvider>
       <div className="min-h-screen flex w-full bg-gradient-to-br from-blue-50 via-white to-green-50">
@@ -210,7 +254,7 @@ const UCFileManager = () => {
                   <div className="flex items-center space-x-2">
                     <Input
                       type="text"
-                      placeholder="Search by title, PI, agency, scheme, or year..."
+                      placeholder="Search by project code, PI, agency, scheme, or year..."
                       value={searchTerm}
                       onChange={(e) => setSearchTerm(e.target.value)}
                     />
@@ -256,10 +300,34 @@ const UCFileManager = () => {
                                   <Button
                                     variant="ghost"
                                     size="sm"
+                                    onClick={() => previewFile(entry.uc_file_path)}
+                                  >
+                                    <Eye className="h-4 w-4 mr-2" />
+                                    Preview
+                                  </Button>
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
                                     onClick={() => downloadFile(entry.uc_file_path, entry.uc_file_name)}
                                   >
                                     <Download className="h-4 w-4 mr-2" />
                                     Download
+                                  </Button>
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => editUCEntry(entry.id)}
+                                  >
+                                    <Edit className="h-4 w-4 mr-2" />
+                                    Edit
+                                  </Button>
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => printFile(entry.uc_file_path)}
+                                  >
+                                    <Printer className="h-4 w-4 mr-2" />
+                                    Print
                                   </Button>
                                   <AlertDialog>
                                     <AlertDialogTrigger asChild>

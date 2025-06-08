@@ -1,13 +1,15 @@
+
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Users, Building, Calendar, FileText, TrendingUp, Clock, CheckCircle } from "lucide-react";
+import { Users, Building, Calendar, FileText, TrendingUp, Clock, CheckCircle, Upload } from "lucide-react";
 import { useFundingAgencies, useFinancialYears, usePrincipalInvestigators } from "@/hooks/useSupabaseData";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
 const Dashboard = () => {
   const [ucs, setUcs] = useState<any[]>([]);
+  const [recentUploadedUCs, setRecentUploadedUCs] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const { agencies } = useFundingAgencies();
   const { years } = useFinancialYears();
@@ -47,6 +49,10 @@ const Dashboard = () => {
       }
 
       setUcs(data || []);
+      
+      // Filter recently uploaded UCs (those without uc_received_date)
+      const uploadedUCs = (data || []).filter(uc => !uc.uc_received_date).slice(0, 5);
+      setRecentUploadedUCs(uploadedUCs);
     } catch (error) {
       console.error('Error:', error);
       toast({
@@ -85,6 +91,7 @@ const Dashboard = () => {
 
   const getRecentUCs = () => {
     return ucs
+      .filter(uc => uc.uc_received_date) // Only show received UCs in tracking
       .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
       .slice(0, 5);
   };
@@ -221,35 +228,73 @@ const Dashboard = () => {
         </Card>
       </div>
 
-      {/* Recent UCs */}
-      <Card className="shadow-lg border-0">
-        <CardHeader>
-          <CardTitle className="text-gray-900">Recent UC Submissions</CardTitle>
-        </CardHeader>
-        <CardContent>
-          {getRecentUCs().length > 0 ? (
-            <div className="space-y-4">
-              {getRecentUCs().map((uc) => (
-                <div key={uc.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-                  <div className="flex-1">
-                    <p className="font-medium text-gray-900">{uc.project_code}</p>
-                    <p className="text-sm text-gray-600">{uc.principal_investigator.name}</p>
-                    <p className="text-xs text-gray-500">{uc.funding_agency.name} • {uc.financial_year.year}</p>
+      {/* Recent UCs and Recently Uploaded UCs */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Recent UC Submissions (tracking) */}
+        <Card className="shadow-lg border-0">
+          <CardHeader>
+            <CardTitle className="text-gray-900">Recent UC Submissions</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {getRecentUCs().length > 0 ? (
+              <div className="space-y-4">
+                {getRecentUCs().map((uc) => (
+                  <div key={uc.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                    <div className="flex-1">
+                      <p className="font-medium text-gray-900">{uc.project_code}</p>
+                      <p className="text-sm text-gray-600">{uc.principal_investigator.name}</p>
+                      <p className="text-xs text-gray-500">{uc.funding_agency.name} • {uc.financial_year.year}</p>
+                    </div>
+                    <div className="text-right">
+                      {getStatusBadge(uc.status)}
+                      <p className="text-xs text-gray-500 mt-1">
+                        {new Date(uc.created_at).toLocaleDateString()}
+                      </p>
+                    </div>
                   </div>
-                  <div className="text-right">
-                    {getStatusBadge(uc.status)}
-                    <p className="text-xs text-gray-500 mt-1">
-                      {new Date(uc.created_at).toLocaleDateString()}
-                    </p>
+                ))}
+              </div>
+            ) : (
+              <p className="text-gray-500 text-center py-8">No UC submissions found</p>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Recently Uploaded UCs */}
+        <Card className="shadow-lg border-0">
+          <CardHeader>
+            <CardTitle className="flex items-center text-gray-900">
+              <Upload className="h-5 w-5 mr-2 text-indigo-600" />
+              Recently Uploaded UCs
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {recentUploadedUCs.length > 0 ? (
+              <div className="space-y-4">
+                {recentUploadedUCs.map((uc) => (
+                  <div key={uc.id} className="flex items-center justify-between p-4 bg-indigo-50 rounded-lg">
+                    <div className="flex-1">
+                      <p className="font-medium text-gray-900">{uc.project_code}</p>
+                      <p className="text-sm text-gray-600">{uc.principal_investigator.name}</p>
+                      <p className="text-xs text-gray-500">{uc.funding_agency.name} • {uc.financial_year.year}</p>
+                    </div>
+                    <div className="text-right">
+                      <Badge variant="secondary" className="bg-indigo-100 text-indigo-800">
+                        UPLOADED
+                      </Badge>
+                      <p className="text-xs text-gray-500 mt-1">
+                        {new Date(uc.created_at).toLocaleDateString()}
+                      </p>
+                    </div>
                   </div>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <p className="text-gray-500 text-center py-8">No UC submissions found</p>
-          )}
-        </CardContent>
-      </Card>
+                ))}
+              </div>
+            ) : (
+              <p className="text-gray-500 text-center py-8">No recently uploaded UCs found</p>
+            )}
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 };
