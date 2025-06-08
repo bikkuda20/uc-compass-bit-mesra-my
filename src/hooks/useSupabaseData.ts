@@ -59,7 +59,25 @@ export const useUCEntries = () => {
         return;
       }
 
-      setUcs(data || []);
+      // Transform the data to match our UCEntry interface with proper type assertion
+      const transformedData: UCEntry[] = (data || []).map(item => ({
+        id: item.id,
+        funding_agency: item.funding_agency,
+        financial_year: item.financial_year,
+        principal_investigator: item.principal_investigator,
+        project_code: item.project_code,
+        uc_file_name: item.uc_file_name,
+        uc_file_path: item.uc_file_path,
+        sanction_letter_file_name: item.sanction_letter_file_name,
+        sanction_letter_file_path: item.sanction_letter_file_path,
+        date_received: item.date_received,
+        date_given: item.date_given,
+        status: item.status as 'Pending' | 'Submitted' | 'Verified',
+        created_at: item.created_at,
+        updated_at: item.updated_at,
+      }));
+
+      setUcs(transformedData);
     } catch (error) {
       console.error('Error:', error);
       toast({
