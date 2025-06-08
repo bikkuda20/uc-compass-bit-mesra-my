@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ArrowLeft, Upload, X } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useFundingAgencies, useFinancialYears, usePrincipalInvestigators } from "@/hooks/useSupabaseData";
@@ -40,11 +40,6 @@ const UCForm = ({ uc, onComplete, onCancel }: UCFormProps) => {
     ucReturnedRegistrarDate: "",
     ucHandedOverPiDate: "",
   });
-  
-  const [files, setFiles] = useState({
-    ucFile: null as File | null,
-    sanctionLetter: null as File | null,
-  });
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
@@ -77,29 +72,6 @@ const UCForm = ({ uc, onComplete, onCancel }: UCFormProps) => {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
-  const handleFileChange = (field: "ucFile" | "sanctionLetter", file: File | null) => {
-    setFiles(prev => ({ ...prev, [field]: file }));
-  };
-
-  const uploadFile = async (file: File, path: string) => {
-    console.log(`Uploading file: ${file.name} to path: ${path}`);
-    
-    const { data, error } = await supabase.storage
-      .from('uc-files')
-      .upload(path, file, {
-        cacheControl: '3600',
-        upsert: false
-      });
-
-    if (error) {
-      console.error('Upload error:', error);
-      throw error;
-    }
-
-    console.log('Upload successful:', data);
-    return data;
-  };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -113,62 +85,9 @@ const UCForm = ({ uc, onComplete, onCancel }: UCFormProps) => {
       return;
     }
 
-    if (!uc && (!files.ucFile || !files.sanctionLetter)) {
-      toast({
-        title: "Files Required",
-        description: "Please upload both UC file and Sanction Letter",
-        variant: "destructive",
-      });
-      return;
-    }
-
     setIsSubmitting(true);
 
     try {
-      let ucFilePath = uc?.uc_file_path || "";
-      let ucFileName = uc?.uc_file_name || "";
-      let sanctionLetterPath = uc?.sanction_letter_file_path || "";
-      let sanctionLetterFileName = uc?.sanction_letter_file_name || "";
-
-      // Upload new files if provided
-      if (files.ucFile) {
-        const timestamp = Date.now();
-        const ucPath = `uc-files/${timestamp}_${files.ucFile.name}`;
-        try {
-          await uploadFile(files.ucFile, ucPath);
-          ucFilePath = ucPath;
-          ucFileName = files.ucFile.name;
-          console.log('UC file uploaded successfully');
-        } catch (uploadError) {
-          console.error('UC file upload failed:', uploadError);
-          toast({
-            title: "Upload Error",
-            description: "Failed to upload UC file. Please try again.",
-            variant: "destructive",
-          });
-          return;
-        }
-      }
-
-      if (files.sanctionLetter) {
-        const timestamp = Date.now();
-        const sanctionPath = `sanction-letters/${timestamp}_${files.sanctionLetter.name}`;
-        try {
-          await uploadFile(files.sanctionLetter, sanctionPath);
-          sanctionLetterPath = sanctionPath;
-          sanctionLetterFileName = files.sanctionLetter.name;
-          console.log('Sanction letter uploaded successfully');
-        } catch (uploadError) {
-          console.error('Sanction letter upload failed:', uploadError);
-          toast({
-            title: "Upload Error",
-            description: "Failed to upload Sanction Letter. Please try again.",
-            variant: "destructive",
-          });
-          return;
-        }
-      }
-
       const ucData = {
         funding_agency_id: formData.fundingAgencyId,
         financial_year_id: formData.financialYearId,
@@ -178,10 +97,10 @@ const UCForm = ({ uc, onComplete, onCancel }: UCFormProps) => {
         date_received: formData.dateReceived || null,
         date_given: formData.dateGiven || null,
         status: formData.status,
-        uc_file_name: ucFileName,
-        uc_file_path: ucFilePath,
-        sanction_letter_file_name: sanctionLetterFileName,
-        sanction_letter_file_path: sanctionLetterPath,
+        uc_file_name: uc?.uc_file_name || "",
+        uc_file_path: uc?.uc_file_path || "",
+        sanction_letter_file_name: uc?.sanction_letter_file_name || "",
+        sanction_letter_file_path: uc?.sanction_letter_file_path || "",
         
         // Workflow tracking fields
         uc_received_date: formData.ucReceivedDate || null,
@@ -206,10 +125,10 @@ const UCForm = ({ uc, onComplete, onCancel }: UCFormProps) => {
 
         toast({
           title: "Success",
-          description: "UC entry updated successfully",
+          description: "UC tracker updated successfully",
         });
       } else {
-        // Create new UC
+        // Create new UC tracker
         const { error } = await supabase
           .from('uc_entries')
           .insert([{
@@ -221,16 +140,16 @@ const UCForm = ({ uc, onComplete, onCancel }: UCFormProps) => {
 
         toast({
           title: "Success",
-          description: "UC entry created successfully. Files uploaded to bucket.",
+          description: "UC tracker created successfully",
         });
       }
       
       onComplete();
     } catch (error) {
-      console.error('Error saving UC entry:', error);
+      console.error('Error saving UC tracker:', error);
       toast({
         title: "Error",
-        description: "Failed to save UC entry",
+        description: "Failed to save UC tracker",
         variant: "destructive",
       });
     } finally {
@@ -241,71 +160,6 @@ const UCForm = ({ uc, onComplete, onCancel }: UCFormProps) => {
   const statuses = ["Pending", "Submitted", "Verified"];
   const projectTypes = ["Project", "Workshop", "Seminar", "Symposium", "Conference"];
 
-  const FileUploadCard = ({ 
-    title, 
-    field, 
-    currentFile, 
-    existingFileName 
-  }: { 
-    title: string; 
-    field: "ucFile" | "sanctionLetter"; 
-    currentFile: File | null;
-    existingFileName?: string;
-  }) => (
-    <Card>
-      <CardHeader>
-        <CardTitle className="text-sm">{title}</CardTitle>
-      </CardHeader>
-      <CardContent>
-        {currentFile ? (
-          <div className="flex items-center justify-between p-3 bg-green-50 border border-green-200 rounded-md">
-            <span className="text-sm text-green-700">{currentFile.name}</span>
-            <Button
-              type="button"
-              size="sm"
-              variant="ghost"
-              onClick={() => handleFileChange(field, null)}
-            >
-              <X className="w-4 h-4" />
-            </Button>
-          </div>
-        ) : existingFileName ? (
-          <div className="space-y-2">
-            <div className="flex items-center justify-between p-3 bg-blue-50 border border-blue-200 rounded-md">
-              <span className="text-sm text-blue-700">Current: {existingFileName}</span>
-            </div>
-            <div className="relative">
-              <input
-                type="file"
-                accept=".pdf"
-                onChange={(e) => handleFileChange(field, e.target.files?.[0] || null)}
-                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-              />
-              <div className="flex items-center justify-center p-4 border-2 border-dashed border-slate-300 rounded-md hover:border-blue-400 transition-colors">
-                <Upload className="w-5 h-5 text-slate-400 mr-2" />
-                <span className="text-sm text-slate-600">Replace file (PDF only)</span>
-              </div>
-            </div>
-          </div>
-        ) : (
-          <div className="relative">
-            <input
-              type="file"
-              accept=".pdf"
-              onChange={(e) => handleFileChange(field, e.target.files?.[0] || null)}
-              className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-              required={!uc}
-            />
-            <div className="flex items-center justify-center p-6 border-2 border-dashed border-slate-300 rounded-md hover:border-blue-400 transition-colors">
-              <Upload className="w-6 h-6 text-slate-400 mr-2" />
-              <span className="text-slate-600">Upload PDF file</span>
-            </div>
-          </div>
-        )}
-      </CardContent>
-    </Card>
-  );
-
   return (
     <div className="space-y-6">
       <div className="flex items-center space-x-4">
@@ -314,7 +168,7 @@ const UCForm = ({ uc, onComplete, onCancel }: UCFormProps) => {
           Back to List
         </Button>
         <h2 className="text-2xl font-bold text-slate-800">
-          {uc ? "Edit UC Entry" : "New UC Entry"}
+          {uc ? "Edit UC Tracker" : "New UC Tracker"}
         </h2>
       </div>
 
@@ -543,29 +397,13 @@ const UCForm = ({ uc, onComplete, onCancel }: UCFormProps) => {
           </CardContent>
         </Card>
 
-        {/* File Uploads */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <FileUploadCard
-            title="UC File *"
-            field="ucFile"
-            currentFile={files.ucFile}
-            existingFileName={uc?.uc_file_name}
-          />
-          <FileUploadCard
-            title="Sanction Letter *"
-            field="sanctionLetter"
-            currentFile={files.sanctionLetter}
-            existingFileName={uc?.sanction_letter_file_name}
-          />
-        </div>
-
         {/* Submit Buttons */}
         <div className="flex justify-end space-x-4">
           <Button type="button" variant="outline" onClick={onCancel}>
             Cancel
           </Button>
           <Button type="submit" disabled={isSubmitting} className="bg-blue-600 hover:bg-blue-700">
-            {isSubmitting ? "Saving..." : uc ? "Update UC" : "Create UC"}
+            {isSubmitting ? "Saving..." : uc ? "Update UC Tracker" : "Create UC Tracker"}
           </Button>
         </div>
       </form>

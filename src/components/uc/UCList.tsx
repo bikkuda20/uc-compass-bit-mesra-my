@@ -1,11 +1,10 @@
-
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Search, Download, Edit, Filter, Loader2, Plus, ArrowLeft } from "lucide-react";
+import { Search, Edit, Filter, Loader2, Plus, ArrowLeft } from "lucide-react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useUCEntries, useFundingAgencies, useFinancialYears } from "@/hooks/useSupabaseData";
 import { useNavigate } from "react-router-dom";
@@ -137,7 +136,7 @@ const UCList = () => {
         </div>
         <Button onClick={handleAddNew} className="bg-blue-600 hover:bg-blue-700">
           <Plus className="w-4 h-4 mr-2" />
-          Add New UC Tracker
+          Create UC Tracker
         </Button>
       </div>
 
@@ -266,13 +265,6 @@ const UCList = () => {
                         onClick={() => handleEditUc(uc)}
                       >
                         <Edit className="w-3 h-3" />
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => console.log("Download UC:", uc.uc_file_name)}
-                      >
-                        <Download className="w-3 h-3" />
                       </Button>
                     </div>
                   </TableCell>
