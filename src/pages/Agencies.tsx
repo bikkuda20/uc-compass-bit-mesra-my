@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -6,8 +7,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { Trash2, Edit, Building, Search, ArrowLeft } from "lucide-react";
-import { useFundingAgencies } from "@/hooks/useSupabaseData";
+import { Trash2, Edit, Building, Search, ArrowLeft, Plus } from "lucide-react";
+import { useFundingAgencies, useSchemes } from "@/hooks/useSupabaseData";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
@@ -17,7 +18,9 @@ const Agencies = () => {
   const [isEditFormOpen, setIsEditFormOpen] = useState(false);
   const [editingAgency, setEditingAgency] = useState<any>(null);
   const [searchQuery, setSearchQuery] = useState("");
+  const [selectedAgency, setSelectedAgency] = useState<string | null>(null);
   const { agencies, loading, refetch } = useFundingAgencies();
+  const { schemes, loading: schemesLoading } = useSchemes(selectedAgency || undefined);
   const [filteredAgencies, setFilteredAgencies] = useState<any[]>([]);
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -135,6 +138,10 @@ const Agencies = () => {
     }
   };
 
+  const handleShowSchemes = (agencyId: string) => {
+    setSelectedAgency(selectedAgency === agencyId ? null : agencyId);
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -158,7 +165,7 @@ const Agencies = () => {
           </Button>
           <div>
             <h1 className="text-3xl font-bold text-gray-900">Funding Agencies</h1>
-            <p className="text-gray-600">Manage funding agencies and their information</p>
+            <p className="text-gray-600">Manage funding agencies and their schemes</p>
           </div>
         </div>
         <Button onClick={() => setIsFormOpen(true)} className="bg-green-600 hover:bg-green-700">
@@ -200,6 +207,7 @@ const Agencies = () => {
             <TableHeader>
               <TableRow>
                 <TableHead>Name</TableHead>
+                <TableHead>Schemes</TableHead>
                 <TableHead>Created At</TableHead>
                 <TableHead>Actions</TableHead>
               </TableRow>
@@ -207,28 +215,61 @@ const Agencies = () => {
             <TableBody>
               {filteredAgencies.length > 0 ? (
                 filteredAgencies.map((agency) => (
-                  <TableRow key={agency.id}>
-                    <TableCell className="font-medium">{agency.name}</TableCell>
-                    <TableCell>{new Date(agency.created_at).toLocaleDateString()}</TableCell>
-                    <TableCell>
-                      <div className="flex space-x-2">
+                  <>
+                    <TableRow key={agency.id}>
+                      <TableCell className="font-medium">{agency.name}</TableCell>
+                      <TableCell>
                         <Button
-                          size="sm"
                           variant="outline"
-                          onClick={() => handleEdit(agency)}
-                        >
-                          <Edit className="w-3 h-3" />
-                        </Button>
-                        <Button
                           size="sm"
-                          variant="destructive"
-                          onClick={() => handleDelete(agency.id)}
+                          onClick={() => handleShowSchemes(agency.id)}
                         >
-                          <Trash2 className="w-3 h-3" />
+                          {selectedAgency === agency.id ? 'Hide Schemes' : 'Show Schemes'}
                         </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
+                      </TableCell>
+                      <TableCell>{new Date(agency.created_at).toLocaleDateString()}</TableCell>
+                      <TableCell>
+                        <div className="flex space-x-2">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => handleEdit(agency)}
+                          >
+                            <Edit className="w-3 h-3" />
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="destructive"
+                            onClick={() => handleDelete(agency.id)}
+                          >
+                            <Trash2 className="w-3 h-3" />
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                    {selectedAgency === agency.id && (
+                      <TableRow>
+                        <TableCell colSpan={4} className="bg-gray-50">
+                          <div className="p-4">
+                            <h4 className="font-semibold mb-2">Schemes for {agency.name}:</h4>
+                            {schemesLoading ? (
+                              <p className="text-gray-500">Loading schemes...</p>
+                            ) : schemes.length > 0 ? (
+                              <div className="flex flex-wrap gap-2">
+                                {schemes.map((scheme) => (
+                                  <Badge key={scheme.id} variant="secondary" className="bg-blue-100 text-blue-800">
+                                    {scheme.name}
+                                  </Badge>
+                                ))}
+                              </div>
+                            ) : (
+                              <p className="text-gray-500">No schemes found for this agency.</p>
+                            )}
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    )}
+                  </>
                 ))
               ) : (
                 <TableRow>
