@@ -6,10 +6,10 @@ import UCList from "@/components/uc/UCList";
 const UCTracker = () => {
   return (
     <SidebarProvider>
-      <div className="min-h-screen flex w-full">
+      <div className="min-h-screen flex w-full bg-gradient-to-br from-blue-50 via-white to-green-50">
         <AppSidebar />
         <SidebarInset>
-          <div className="flex-1 bg-gradient-to-br from-green-50 to-blue-100">
+          <div className="flex-1">
             <UCList />
           </div>
         </SidebarInset>
