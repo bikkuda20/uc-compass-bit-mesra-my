@@ -12,6 +12,8 @@ import Investigators from "./pages/Investigators";
 import Agencies from "./pages/Agencies";
 import Years from "./pages/Years";
 import Settings from "./pages/Settings";
+import Auth from "./pages/Auth";
+import UserManagement from "./pages/UserManagement";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -31,6 +33,8 @@ const App = () => (
           <Route path="/agencies" element={<Agencies />} />
           <Route path="/years" element={<Years />} />
           <Route path="/settings" element={<Settings />} />
+          <Route path="/auth" element={<Auth />} />
+          <Route path="/users" element={<UserManagement />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>

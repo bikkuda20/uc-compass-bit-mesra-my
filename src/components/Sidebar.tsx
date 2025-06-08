@@ -1,158 +1,75 @@
 
-import { Home, FileText, Settings, Users, Building, Calendar, FolderOpen, Upload } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
+import { cn } from "@/lib/utils";
 import {
-  Sidebar,
-  SidebarContent,
-  SidebarGroup,
-  SidebarGroupContent,
-  SidebarGroupLabel,
-  SidebarMenu,
-  SidebarMenuButton,
-  SidebarMenuItem,
-  SidebarHeader,
-  SidebarFooter,
-} from "@/components/ui/sidebar";
+  BarChart3,
+  FileText,
+  Upload,
+  Users,
+  Building2,
+  Calendar,
+  Settings,
+  FolderOpen,
+  UserCog,
+} from "lucide-react";
 
-const menuItems = [
-  {
-    title: "Dashboard",
-    url: "/",
-    icon: Home,
-    iconColor: "text-blue-600",
-    hoverColor: "hover:bg-blue-50 hover:text-blue-700",
-  },
-  {
-    title: "UC Tracker",
-    url: "/uc-tracker",
-    icon: FileText,
-    iconColor: "text-green-600",
-    hoverColor: "hover:bg-green-50 hover:text-green-700",
-  },
-  {
-    title: "UC Upload",
-    url: "/uc-upload",
-    icon: Upload,
-    iconColor: "text-purple-600",
-    hoverColor: "hover:bg-purple-50 hover:text-purple-700",
-  },
-  {
-    title: "UC File Manager",
-    url: "/uc-files",
-    icon: FolderOpen,
-    iconColor: "text-orange-600",
-    hoverColor: "hover:bg-orange-50 hover:text-orange-700",
-  },
-  {
-    title: "Principal Investigators",
-    url: "/investigators",
-    icon: Users,
-    iconColor: "text-indigo-600",
-    hoverColor: "hover:bg-indigo-50 hover:text-indigo-700",
-  },
-  {
-    title: "Funding Agencies",
-    url: "/agencies",
-    icon: Building,
-    iconColor: "text-cyan-600",
-    hoverColor: "hover:bg-cyan-50 hover:text-cyan-700",
-  },
-  {
-    title: "Financial Years",
-    url: "/years",
-    icon: Calendar,
-    iconColor: "text-yellow-600",
-    hoverColor: "hover:bg-yellow-50 hover:text-yellow-700",
-  },
+const navigation = [
+  { name: "Dashboard", href: "/", icon: BarChart3 },
+  { name: "UC Tracker", href: "/uc-tracker", icon: FileText },
+  { name: "UC Upload", href: "/uc-upload", icon: Upload },
+  { name: "UC Files", href: "/uc-files", icon: FolderOpen },
+  { name: "Investigators", href: "/investigators", icon: Users },
+  { name: "Agencies", href: "/agencies", icon: Building2 },
+  { name: "Years", href: "/years", icon: Calendar },
+  { name: "User Management", href: "/users", icon: UserCog },
+  { name: "Settings", href: "/settings", icon: Settings },
 ];
 
-const adminItems = [
-  {
-    title: "Settings",
-    url: "/settings",
-    icon: Settings,
-    iconColor: "text-gray-600",
-    hoverColor: "hover:bg-gray-50 hover:text-gray-700",
-  },
-];
-
-export function AppSidebar() {
+export const Sidebar = () => {
   const location = useLocation();
 
   return (
-    <Sidebar className="border-r border-gray-200 bg-gradient-to-b from-white to-gray-50">
-      <SidebarHeader>
-        <div className="p-4">
-          <h2 className="text-lg font-bold bg-gradient-to-r from-blue-600 to-green-600 bg-clip-text text-transparent">
-            UC Management
-          </h2>
-          <p className="text-sm text-slate-500">System</p>
+    <div className="flex h-full w-64 flex-col fixed inset-y-0 z-50 bg-white shadow-xl">
+      <div className="flex flex-1 flex-col min-h-0">
+        <div className="flex items-center h-16 flex-shrink-0 px-4 bg-gradient-to-r from-blue-600 to-purple-600">
+          <div className="flex items-center space-x-3">
+            <img 
+              src="/logo.png" 
+              alt="UC Management Logo" 
+              className="h-8 w-auto"
+            />
+            <h1 className="text-white text-lg font-semibold">UC Management</h1>
+          </div>
         </div>
-      </SidebarHeader>
-      <SidebarContent>
-        <SidebarGroup>
-          <SidebarGroupLabel className="text-gray-700 font-semibold">Main Menu</SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              {menuItems.map((item) => (
-                <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton 
-                    asChild 
-                    isActive={location.pathname === item.url}
-                    className={`
-                      ${location.pathname === item.url 
-                        ? 'bg-gradient-to-r from-blue-100 to-green-100 text-blue-700 border-r-2 border-blue-500' 
-                        : 'text-gray-700'
-                      } 
-                      ${item.hoverColor} 
-                      transition-all duration-200 ease-in-out rounded-lg mx-2 mb-1
-                    `}
-                  >
-                    <Link to={item.url} className="flex items-center space-x-3 p-2">
-                      <item.icon className={`w-5 h-5 ${location.pathname === item.url ? 'text-blue-600' : item.iconColor}`} />
-                      <span className="font-medium">{item.title}</span>
-                    </Link>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
-        <SidebarGroup>
-          <SidebarGroupLabel className="text-gray-700 font-semibold">Administration</SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              {adminItems.map((item) => (
-                <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton 
-                    asChild 
-                    isActive={location.pathname === item.url}
-                    className={`
-                      ${location.pathname === item.url 
-                        ? 'bg-gradient-to-r from-blue-100 to-green-100 text-blue-700 border-r-2 border-blue-500' 
-                        : 'text-gray-700'
-                      } 
-                      ${item.hoverColor} 
-                      transition-all duration-200 ease-in-out rounded-lg mx-2 mb-1
-                    `}
-                  >
-                    <Link to={item.url} className="flex items-center space-x-3 p-2">
-                      <item.icon className={`w-5 h-5 ${location.pathname === item.url ? 'text-blue-600' : item.iconColor}`} />
-                      <span className="font-medium">{item.title}</span>
-                    </Link>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
-      </SidebarContent>
-      <SidebarFooter>
-        <div className="p-4 text-sm text-slate-500 bg-gradient-to-r from-blue-50 to-green-50 rounded-lg mx-2 mb-2">
-          <p className="font-medium">Version 1.0.0</p>
-          <p className="text-xs">R&D Cell Management</p>
+        <div className="flex-1 flex flex-col pt-5 pb-4 overflow-y-auto">
+          <nav className="mt-5 flex-1 px-2 space-y-1">
+            {navigation.map((item) => {
+              const isActive = location.pathname === item.href;
+              return (
+                <Link
+                  key={item.name}
+                  to={item.href}
+                  className={cn(
+                    isActive
+                      ? "bg-blue-100 border-r-2 border-blue-600 text-blue-700"
+                      : "text-gray-600 hover:bg-gray-50 hover:text-gray-900",
+                    "group flex items-center px-2 py-2 text-sm font-medium rounded-md transition-colors"
+                  )}
+                >
+                  <item.icon
+                    className={cn(
+                      isActive ? "text-blue-500" : "text-gray-400 group-hover:text-gray-500",
+                      "mr-3 flex-shrink-0 h-5 w-5"
+                    )}
+                    aria-hidden="true"
+                  />
+                  {item.name}
+                </Link>
+              );
+            })}
+          </nav>
         </div>
-      </SidebarFooter>
-    </Sidebar>
+      </div>
+    </div>
   );
-}
+};

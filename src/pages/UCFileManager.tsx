@@ -1,22 +1,24 @@
-
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Search, Download, Eye, Printer, FileText, ArrowLeft } from "lucide-react";
+import { Search, Download, Eye, Printer, FileText, ArrowLeft, Edit2, Save, X } from "lucide-react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useUCEntries } from "@/hooks/useSupabaseData";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 const UCFileManager = () => {
-  const { ucs, loading } = useUCEntries();
+  const { ucs, loading, refetch } = useUCEntries();
   const [filteredUcs, setFilteredUcs] = useState<any[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedFile, setSelectedFile] = useState<any>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editData, setEditData] = useState<any>({});
   const { toast } = useToast();
   const navigate = useNavigate();
 
@@ -27,7 +29,8 @@ const UCFileManager = () => {
       filtered = filtered.filter((uc) =>
         uc.project_code.toLowerCase().includes(searchQuery.toLowerCase()) ||
         uc.principal_investigator.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        uc.funding_agency.name.toLowerCase().includes(searchQuery.toLowerCase())
+        uc.funding_agency.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (uc.scheme?.name || '').toLowerCase().includes(searchQuery.toLowerCase())
       );
     }
 
@@ -47,6 +50,51 @@ const UCFileManager = () => {
         {status}
       </Badge>
     );
+  };
+
+  const handleEdit = (uc: any) => {
+    setEditingId(uc.id);
+    setEditData({
+      project_code: uc.project_code,
+      status: uc.status,
+      scheme_name: uc.scheme?.name || '',
+    });
+  };
+
+  const handleSave = async (id: string) => {
+    try {
+      const { error } = await supabase
+        .from('uc_entries')
+        .update({
+          project_code: editData.project_code,
+          status: editData.status,
+          scheme_name: editData.scheme_name,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', id);
+
+      if (error) throw error;
+
+      toast({
+        title: "Success",
+        description: "UC entry updated successfully",
+      });
+
+      setEditingId(null);
+      refetch();
+    } catch (error) {
+      console.error('Error updating UC entry:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update UC entry",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleCancel = () => {
+    setEditingId(null);
+    setEditData({});
   };
 
   const handlePreview = async (uc: any) => {
@@ -167,7 +215,7 @@ const UCFileManager = () => {
           <div className="relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
             <Input
-              placeholder="Search by project code, PI name, or funding agency..."
+              placeholder="Search by project code, PI name, funding agency, or scheme..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="pl-10"
@@ -192,9 +240,8 @@ const UCFileManager = () => {
                   <TableRow>
                     <TableHead>PI Name</TableHead>
                     <TableHead>Agency</TableHead>
-                    <TableHead>Financial Year</TableHead>
+                    <TableHead>Scheme</TableHead>
                     <TableHead>Project Code</TableHead>
-                    <TableHead>Department</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead>Actions</TableHead>
                   </TableRow>
@@ -205,46 +252,114 @@ const UCFileManager = () => {
                       <TableRow key={uc.id} className="hover:bg-gray-50">
                         <TableCell className="font-medium">{uc.principal_investigator.name}</TableCell>
                         <TableCell>{uc.funding_agency.name}</TableCell>
-                        <TableCell>{uc.financial_year.year}</TableCell>
-                        <TableCell>{uc.project_code}</TableCell>
-                        <TableCell>{uc.principal_investigator.department || 'N/A'}</TableCell>
-                        <TableCell>{getStatusBadge(uc.status)}</TableCell>
+                        <TableCell>
+                          {editingId === uc.id ? (
+                            <Input
+                              value={editData.scheme_name}
+                              onChange={(e) => setEditData({...editData, scheme_name: e.target.value})}
+                              className="w-full"
+                            />
+                          ) : (
+                            uc.scheme?.name || uc.scheme_name || 'N/A'
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          {editingId === uc.id ? (
+                            <Input
+                              value={editData.project_code}
+                              onChange={(e) => setEditData({...editData, project_code: e.target.value})}
+                              className="w-full"
+                            />
+                          ) : (
+                            uc.project_code
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          {editingId === uc.id ? (
+                            <Select
+                              value={editData.status}
+                              onValueChange={(value) => setEditData({...editData, status: value})}
+                            >
+                              <SelectTrigger className="w-full">
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="Pending">Pending</SelectItem>
+                                <SelectItem value="Submitted">Submitted</SelectItem>
+                                <SelectItem value="Verified">Verified</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          ) : (
+                            getStatusBadge(uc.status)
+                          )}
+                        </TableCell>
                         <TableCell>
                           <div className="flex space-x-1">
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() => handlePreview(uc)}
-                              className="flex items-center"
-                            >
-                              <Eye className="w-3 h-3" />
-                            </Button>
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() => handleDownload(uc)}
-                              className="flex items-center"
-                            >
-                              <Download className="w-3 h-3" />
-                            </Button>
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() => {
-                                setSelectedFile(uc);
-                                handlePreview(uc).then(() => handlePrint());
-                              }}
-                              className="flex items-center"
-                            >
-                              <Printer className="w-3 h-3" />
-                            </Button>
+                            {editingId === uc.id ? (
+                              <>
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => handleSave(uc.id)}
+                                  className="flex items-center"
+                                >
+                                  <Save className="w-3 h-3" />
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={handleCancel}
+                                  className="flex items-center"
+                                >
+                                  <X className="w-3 h-3" />
+                                </Button>
+                              </>
+                            ) : (
+                              <>
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => handleEdit(uc)}
+                                  className="flex items-center"
+                                >
+                                  <Edit2 className="w-3 h-3" />
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => handlePreview(uc)}
+                                  className="flex items-center"
+                                >
+                                  <Eye className="w-3 h-3" />
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => handleDownload(uc)}
+                                  className="flex items-center"
+                                >
+                                  <Download className="w-3 h-3" />
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => {
+                                    setSelectedFile(uc);
+                                    handlePreview(uc).then(() => handlePrint());
+                                  }}
+                                  className="flex items-center"
+                                >
+                                  <Printer className="w-3 h-3" />
+                                </Button>
+                              </>
+                            )}
                           </div>
                         </TableCell>
                       </TableRow>
                     ))
                   ) : (
                     <TableRow>
-                      <TableCell colSpan={7} className="text-center py-8">
+                      <TableCell colSpan={6} className="text-center py-8">
                         <FileText className="w-12 h-12 mx-auto text-gray-400 mb-4" />
                         <p className="text-gray-500">No UC files found</p>
                       </TableCell>

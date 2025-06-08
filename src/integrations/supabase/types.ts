@@ -135,6 +135,7 @@ export type Database = {
           sanction_letter_file_name: string
           sanction_letter_file_path: string
           scheme_id: string | null
+          scheme_name: string | null
           status: string
           uc_checked_ar_finance_date: string | null
           uc_file_name: string
@@ -163,6 +164,7 @@ export type Database = {
           sanction_letter_file_name: string
           sanction_letter_file_path: string
           scheme_id?: string | null
+          scheme_name?: string | null
           status?: string
           uc_checked_ar_finance_date?: string | null
           uc_file_name: string
@@ -191,6 +193,7 @@ export type Database = {
           sanction_letter_file_name?: string
           sanction_letter_file_path?: string
           scheme_id?: string | null
+          scheme_name?: string | null
           status?: string
           uc_checked_ar_finance_date?: string | null
           uc_file_name?: string
@@ -234,6 +237,36 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      users: {
+        Row: {
+          created_at: string | null
+          email: string
+          full_name: string | null
+          id: string
+          is_active: boolean | null
+          role: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          email: string
+          full_name?: string | null
+          id?: string
+          is_active?: boolean | null
+          role?: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          email?: string
+          full_name?: string | null
+          id?: string
+          is_active?: boolean | null
+          role?: string
+          updated_at?: string | null
+        }
+        Relationships: []
       }
     }
     Views: {
