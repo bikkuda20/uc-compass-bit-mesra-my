@@ -21,7 +21,7 @@ const navigation = [
   { name: "UC Tracker", href: "/uc-tracker", icon: FileText },
   { name: "UC Upload", href: "/uc-upload", icon: Upload },
   { name: "UC Files", href: "/uc-files", icon: FolderOpen },
-  { name: "Investigators", href: "/investigators", icon: Users },
+  { name: "Principal Investigator", href: "/investigators", icon: Users },
   { name: "Agencies", href: "/agencies", icon: Building2 },
   { name: "Financial Year", href: "/years", icon: Calendar },
   { name: "User Management", href: "/users", icon: UserCog },
