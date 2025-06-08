@@ -1,5 +1,5 @@
 
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import {
   BarChart3,
@@ -11,7 +11,10 @@ import {
   Settings,
   FolderOpen,
   UserCog,
+  LogOut,
 } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
 
 const navigation = [
   { name: "Dashboard", href: "/", icon: BarChart3 },
@@ -27,6 +30,27 @@ const navigation = [
 
 export const Sidebar = () => {
   const location = useLocation();
+  const navigate = useNavigate();
+  const { toast } = useToast();
+
+  const handleLogout = async () => {
+    try {
+      const { error } = await supabase.auth.signOut();
+      if (error) throw error;
+      
+      toast({
+        title: "Success",
+        description: "Logged out successfully",
+      });
+      navigate('/auth');
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to logout",
+        variant: "destructive",
+      });
+    }
+  };
 
   return (
     <div className="flex h-full w-64 flex-col fixed inset-y-0 z-50 bg-white shadow-xl">
@@ -37,6 +61,10 @@ export const Sidebar = () => {
               src="/logo.png" 
               alt="UC Management Logo" 
               className="h-8 w-auto"
+              onError={(e) => {
+                console.log('Logo failed to load');
+                e.currentTarget.style.display = 'none';
+              }}
             />
             <h1 className="text-white text-lg font-semibold">UC Management</h1>
           </div>
@@ -68,6 +96,18 @@ export const Sidebar = () => {
               );
             })}
           </nav>
+          <div className="px-2 pt-4 border-t border-gray-200">
+            <button
+              onClick={handleLogout}
+              className="group flex items-center px-2 py-2 text-sm font-medium rounded-md transition-colors text-red-600 hover:bg-red-50 hover:text-red-700 w-full"
+            >
+              <LogOut
+                className="mr-3 flex-shrink-0 h-5 w-5"
+                aria-hidden="true"
+              />
+              Logout
+            </button>
+          </div>
         </div>
       </div>
     </div>

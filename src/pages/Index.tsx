@@ -9,7 +9,7 @@ const Index = () => {
       <div className="min-h-screen flex w-full bg-gradient-to-br from-blue-50 via-white to-green-50">
         <Sidebar />
         <SidebarInset>
-          <div className="flex-1 bg-gradient-to-br from-blue-50 via-white to-green-50">
+          <div className="flex-1 bg-gradient-to-br from-blue-50 via-white to-green-50 ml-64">
             <Dashboard />
           </div>
         </SidebarInset>
