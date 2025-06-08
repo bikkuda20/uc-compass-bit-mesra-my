@@ -185,7 +185,7 @@ const Years = () => {
           </div>
         </div>
         <Button onClick={() => setIsFormOpen(true)} className="bg-yellow-600 hover:bg-yellow-700">
-          Add New Year
+          Add Financial Year
         </Button>
       </div>
 
