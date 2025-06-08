@@ -18,9 +18,9 @@ const UCList = ({ onEdit, onNew }: UCListProps) => {
   const [filteredUcs, setFilteredUcs] = useState<any[]>([]);
   const [filters, setFilters] = useState({
     search: "",
-    fundingAgency: "",
-    financialYear: "",
-    status: "",
+    fundingAgency: "all",
+    financialYear: "all",
+    status: "all",
   });
 
   // Mock data - replace with actual API calls
@@ -81,15 +81,15 @@ const UCList = ({ onEdit, onNew }: UCListProps) => {
       );
     }
 
-    if (filters.fundingAgency) {
+    if (filters.fundingAgency && filters.fundingAgency !== "all") {
       filtered = filtered.filter((uc) => uc.fundingAgency === filters.fundingAgency);
     }
 
-    if (filters.financialYear) {
+    if (filters.financialYear && filters.financialYear !== "all") {
       filtered = filtered.filter((uc) => uc.financialYear === filters.financialYear);
     }
 
-    if (filters.status) {
+    if (filters.status && filters.status !== "all") {
       filtered = filtered.filter((uc) => uc.status === filters.status);
     }
 
@@ -151,7 +151,7 @@ const UCList = ({ onEdit, onNew }: UCListProps) => {
                 <SelectValue placeholder="Funding Agency" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">All Agencies</SelectItem>
+                <SelectItem value="all">All Agencies</SelectItem>
                 {fundingAgencies.map((agency) => (
                   <SelectItem key={agency} value={agency}>
                     {agency}
@@ -167,7 +167,7 @@ const UCList = ({ onEdit, onNew }: UCListProps) => {
                 <SelectValue placeholder="Financial Year" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">All Years</SelectItem>
+                <SelectItem value="all">All Years</SelectItem>
                 {financialYears.map((year) => (
                   <SelectItem key={year} value={year}>
                     {year}
@@ -183,7 +183,7 @@ const UCList = ({ onEdit, onNew }: UCListProps) => {
                 <SelectValue placeholder="Status" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">All Status</SelectItem>
+                <SelectItem value="all">All Status</SelectItem>
                 {statuses.map((status) => (
                   <SelectItem key={status} value={status}>
                     {status}
