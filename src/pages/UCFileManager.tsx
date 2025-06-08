@@ -4,10 +4,12 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Search, Download, Eye, Printer, FileText, Calendar, User, Building } from "lucide-react";
+import { Search, Download, Eye, Printer, FileText, ArrowLeft } from "lucide-react";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useUCEntries } from "@/hooks/useSupabaseData";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { useNavigate } from "react-router-dom";
 
 const UCFileManager = () => {
   const { ucs, loading } = useUCEntries();
@@ -16,6 +18,7 @@ const UCFileManager = () => {
   const [selectedFile, setSelectedFile] = useState<any>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const { toast } = useToast();
+  const navigate = useNavigate();
 
   useEffect(() => {
     let filtered = ucs;
@@ -50,7 +53,7 @@ const UCFileManager = () => {
     try {
       const { data, error } = await supabase.storage
         .from('uc-files')
-        .createSignedUrl(uc.uc_file_path, 3600); // 1 hour expiry
+        .createSignedUrl(uc.uc_file_path, 3600);
 
       if (error) {
         console.error('Error creating signed URL:', error);
@@ -90,7 +93,6 @@ const UCFileManager = () => {
         return;
       }
 
-      // Create download link
       const url = window.URL.createObjectURL(data);
       const link = document.createElement('a');
       link.href = url;
@@ -136,9 +138,21 @@ const UCFileManager = () => {
 
   return (
     <div className="p-6 space-y-6 bg-gradient-to-br from-purple-50 to-pink-100 min-h-screen">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">UC File Manager</h1>
-        <p className="text-gray-600">Manage and view all uploaded UC files</p>
+      <div className="flex items-center justify-between mb-8">
+        <div className="flex items-center space-x-4">
+          <Button
+            variant="outline"
+            onClick={() => navigate('/')}
+            className="flex items-center space-x-2"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            <span>Back to Dashboard</span>
+          </Button>
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900">UC File Manager</h1>
+            <p className="text-gray-600">Manage and view all uploaded UC files</p>
+          </div>
+        </div>
       </div>
 
       {/* Search Bar */}
@@ -162,74 +176,83 @@ const UCFileManager = () => {
         </CardContent>
       </Card>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* UC Files List */}
-        <Card className="shadow-lg border-0">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* UC Files Table */}
+        <Card className="shadow-lg border-0 lg:col-span-2">
           <CardHeader>
             <CardTitle className="flex items-center">
               <FileText className="w-5 h-5 mr-2 text-green-600" />
               UC Files ({filteredUcs.length})
             </CardTitle>
           </CardHeader>
-          <CardContent className="max-h-96 overflow-y-auto">
-            {filteredUcs.length > 0 ? (
-              <div className="space-y-4">
-                {filteredUcs.map((uc) => (
-                  <div key={uc.id} className="p-4 border rounded-lg bg-white shadow-sm hover:shadow-md transition-shadow">
-                    <div className="flex items-start justify-between mb-3">
-                      <div className="flex-1">
-                        <h4 className="font-semibold text-gray-900 mb-1">{uc.project_code}</h4>
-                        <div className="space-y-1 text-sm text-gray-600">
-                          <div className="flex items-center">
-                            <User className="w-3 h-3 mr-1" />
-                            {uc.principal_investigator.name}
+          <CardContent className="p-0">
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>PI Name</TableHead>
+                    <TableHead>Agency</TableHead>
+                    <TableHead>Financial Year</TableHead>
+                    <TableHead>Project Code</TableHead>
+                    <TableHead>Department</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {filteredUcs.length > 0 ? (
+                    filteredUcs.map((uc) => (
+                      <TableRow key={uc.id} className="hover:bg-gray-50">
+                        <TableCell className="font-medium">{uc.principal_investigator.name}</TableCell>
+                        <TableCell>{uc.funding_agency.name}</TableCell>
+                        <TableCell>{uc.financial_year.year}</TableCell>
+                        <TableCell>{uc.project_code}</TableCell>
+                        <TableCell>{uc.principal_investigator.department || 'N/A'}</TableCell>
+                        <TableCell>{getStatusBadge(uc.status)}</TableCell>
+                        <TableCell>
+                          <div className="flex space-x-1">
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => handlePreview(uc)}
+                              className="flex items-center"
+                            >
+                              <Eye className="w-3 h-3" />
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => handleDownload(uc)}
+                              className="flex items-center"
+                            >
+                              <Download className="w-3 h-3" />
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => {
+                                setSelectedFile(uc);
+                                handlePreview(uc).then(() => handlePrint());
+                              }}
+                              className="flex items-center"
+                            >
+                              <Printer className="w-3 h-3" />
+                            </Button>
                           </div>
-                          <div className="flex items-center">
-                            <Building className="w-3 h-3 mr-1" />
-                            {uc.funding_agency.name}
-                          </div>
-                          <div className="flex items-center">
-                            <Calendar className="w-3 h-3 mr-1" />
-                            {uc.financial_year.year}
-                          </div>
-                        </div>
-                      </div>
-                      {getStatusBadge(uc.status)}
-                    </div>
-                    
-                    <div className="text-xs text-gray-500 mb-3">
-                      File: {uc.uc_file_name}
-                    </div>
-
-                    <div className="flex space-x-2">
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => handlePreview(uc)}
-                        className="flex items-center"
-                      >
-                        <Eye className="w-3 h-3 mr-1" />
-                        Preview
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => handleDownload(uc)}
-                        className="flex items-center"
-                      >
-                        <Download className="w-3 h-3 mr-1" />
-                        Download
-                      </Button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div className="text-center py-8">
-                <FileText className="w-12 h-12 mx-auto text-gray-400 mb-4" />
-                <p className="text-gray-500">No UC files found</p>
-              </div>
-            )}
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  ) : (
+                    <TableRow>
+                      <TableCell colSpan={7} className="text-center py-8">
+                        <FileText className="w-12 h-12 mx-auto text-gray-400 mb-4" />
+                        <p className="text-gray-500">No UC files found</p>
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </TableBody>
+              </Table>
+            </div>
           </CardContent>
         </Card>
 
