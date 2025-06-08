@@ -123,6 +123,7 @@ export type Database = {
         Row: {
           created_at: string
           created_by: string | null
+          current_status: string | null
           date_given: string | null
           date_received: string | null
           financial_year_id: string
@@ -135,14 +136,22 @@ export type Database = {
           sanction_letter_file_path: string
           scheme_id: string | null
           status: string
+          uc_checked_ar_finance_date: string | null
           uc_file_name: string
           uc_file_path: string
+          uc_handed_over_pi_date: string | null
+          uc_received_date: string | null
+          uc_returned_registrar_date: string | null
+          uc_sent_deputy_comptroller_date: string | null
+          uc_sent_registrar_date: string | null
+          uc_verified_date: string | null
           updated_at: string
           updated_by: string | null
         }
         Insert: {
           created_at?: string
           created_by?: string | null
+          current_status?: string | null
           date_given?: string | null
           date_received?: string | null
           financial_year_id: string
@@ -155,14 +164,22 @@ export type Database = {
           sanction_letter_file_path: string
           scheme_id?: string | null
           status?: string
+          uc_checked_ar_finance_date?: string | null
           uc_file_name: string
           uc_file_path: string
+          uc_handed_over_pi_date?: string | null
+          uc_received_date?: string | null
+          uc_returned_registrar_date?: string | null
+          uc_sent_deputy_comptroller_date?: string | null
+          uc_sent_registrar_date?: string | null
+          uc_verified_date?: string | null
           updated_at?: string
           updated_by?: string | null
         }
         Update: {
           created_at?: string
           created_by?: string | null
+          current_status?: string | null
           date_given?: string | null
           date_received?: string | null
           financial_year_id?: string
@@ -175,8 +192,15 @@ export type Database = {
           sanction_letter_file_path?: string
           scheme_id?: string | null
           status?: string
+          uc_checked_ar_finance_date?: string | null
           uc_file_name?: string
           uc_file_path?: string
+          uc_handed_over_pi_date?: string | null
+          uc_received_date?: string | null
+          uc_returned_registrar_date?: string | null
+          uc_sent_deputy_comptroller_date?: string | null
+          uc_sent_registrar_date?: string | null
+          uc_verified_date?: string | null
           updated_at?: string
           updated_by?: string | null
         }

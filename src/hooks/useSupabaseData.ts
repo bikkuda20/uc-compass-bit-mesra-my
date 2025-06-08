@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -33,6 +32,17 @@ export interface UCEntry {
   date_received?: string;
   date_given?: string;
   status: 'Pending' | 'Submitted' | 'Verified';
+  
+  // New workflow tracking fields
+  uc_received_date?: string;
+  uc_verified_date?: string;
+  uc_checked_ar_finance_date?: string;
+  uc_sent_deputy_comptroller_date?: string;
+  uc_sent_registrar_date?: string;
+  uc_returned_registrar_date?: string;
+  uc_handed_over_pi_date?: string;
+  current_status: string;
+  
   created_at: string;
   updated_at: string;
 }
@@ -82,6 +92,17 @@ export const useUCEntries = () => {
         date_received: item.date_received,
         date_given: item.date_given,
         status: item.status as 'Pending' | 'Submitted' | 'Verified',
+        
+        // New workflow fields
+        uc_received_date: item.uc_received_date,
+        uc_verified_date: item.uc_verified_date,
+        uc_checked_ar_finance_date: item.uc_checked_ar_finance_date,
+        uc_sent_deputy_comptroller_date: item.uc_sent_deputy_comptroller_date,
+        uc_sent_registrar_date: item.uc_sent_registrar_date,
+        uc_returned_registrar_date: item.uc_returned_registrar_date,
+        uc_handed_over_pi_date: item.uc_handed_over_pi_date,
+        current_status: item.current_status || 'Not Started',
+        
         created_at: item.created_at,
         updated_at: item.updated_at,
       }));

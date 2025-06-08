@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -23,7 +24,7 @@ const UCList = () => {
     search: "",
     fundingAgency: "all",
     financialYear: "all",
-    status: "all",
+    currentStatus: "all",
     projectType: "all",
   });
 
@@ -46,8 +47,8 @@ const UCList = () => {
       filtered = filtered.filter((uc) => uc.financial_year.year === filters.financialYear);
     }
 
-    if (filters.status && filters.status !== "all") {
-      filtered = filtered.filter((uc) => uc.status === filters.status);
+    if (filters.currentStatus && filters.currentStatus !== "all") {
+      filtered = filtered.filter((uc) => uc.current_status === filters.currentStatus);
     }
 
     if (filters.projectType && filters.projectType !== "all") {
@@ -59,12 +60,17 @@ const UCList = () => {
 
   const getStatusBadge = (status: string) => {
     const statusConfig = {
-      Pending: { variant: "secondary" as const, className: "bg-orange-100 text-orange-800" },
-      Submitted: { variant: "secondary" as const, className: "bg-blue-100 text-blue-800" },
-      Verified: { variant: "secondary" as const, className: "bg-green-100 text-green-800" },
+      "Not Started": { variant: "secondary" as const, className: "bg-gray-100 text-gray-800" },
+      "Received from PI": { variant: "secondary" as const, className: "bg-blue-100 text-blue-800" },
+      "Verified by Related Person": { variant: "secondary" as const, className: "bg-indigo-100 text-indigo-800" },
+      "Checked by AR Finance": { variant: "secondary" as const, className: "bg-purple-100 text-purple-800" },
+      "Sent to Deputy Comptroller": { variant: "secondary" as const, className: "bg-yellow-100 text-yellow-800" },
+      "Sent to Registrar Office": { variant: "secondary" as const, className: "bg-orange-100 text-orange-800" },
+      "Returned from Registrar Office": { variant: "secondary" as const, className: "bg-cyan-100 text-cyan-800" },
+      "Handed Over to PI": { variant: "secondary" as const, className: "bg-green-100 text-green-800" },
     };
     
-    const config = statusConfig[status as keyof typeof statusConfig] || statusConfig.Pending;
+    const config = statusConfig[status as keyof typeof statusConfig] || statusConfig["Not Started"];
     return (
       <Badge variant={config.variant} className={config.className}>
         {status}
@@ -72,7 +78,16 @@ const UCList = () => {
     );
   };
 
-  const statuses = ["Pending", "Submitted", "Verified"];
+  const currentStatuses = [
+    "Not Started",
+    "Received from PI", 
+    "Verified by Related Person",
+    "Checked by AR Finance",
+    "Sent to Deputy Comptroller",
+    "Sent to Registrar Office",
+    "Returned from Registrar Office",
+    "Handed Over to PI"
+  ];
   const projectTypes = ["Project", "Workshop", "Seminar", "Symposium", "Conference"];
 
   const handleFormComplete = () => {
@@ -194,15 +209,15 @@ const UCList = () => {
               </SelectContent>
             </Select>
             <Select
-              value={filters.status}
-              onValueChange={(value) => setFilters({ ...filters, status: value })}
+              value={filters.currentStatus}
+              onValueChange={(value) => setFilters({ ...filters, currentStatus: value })}
             >
               <SelectTrigger>
-                <SelectValue placeholder="Status" />
+                <SelectValue placeholder="Current Status" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Status</SelectItem>
-                {statuses.map((status) => (
+                {currentStatuses.map((status) => (
                   <SelectItem key={status} value={status}>
                     {status}
                   </SelectItem>
@@ -220,14 +235,14 @@ const UCList = () => {
             <TableHeader>
               <TableRow>
                 <TableHead>Funding Agency</TableHead>
-                <TableHead>Scheme</TableHead>
                 <TableHead>Financial Year</TableHead>
                 <TableHead>PI Name</TableHead>
                 <TableHead>Project Code</TableHead>
                 <TableHead>Project Type</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Date Received</TableHead>
-                <TableHead>Date Given</TableHead>
+                <TableHead>Current Status</TableHead>
+                <TableHead>UC Received</TableHead>
+                <TableHead>UC Verified</TableHead>
+                <TableHead>AR Finance Check</TableHead>
                 <TableHead>Actions</TableHead>
               </TableRow>
             </TableHeader>
@@ -235,14 +250,14 @@ const UCList = () => {
               {filteredUcs.map((uc) => (
                 <TableRow key={uc.id}>
                   <TableCell className="font-medium">{uc.funding_agency.name}</TableCell>
-                  <TableCell>{uc.scheme?.name || "-"}</TableCell>
                   <TableCell>{uc.financial_year.year}</TableCell>
                   <TableCell>{uc.principal_investigator.name}</TableCell>
                   <TableCell>{uc.project_code}</TableCell>
                   <TableCell>{uc.project_type}</TableCell>
-                  <TableCell>{getStatusBadge(uc.status)}</TableCell>
-                  <TableCell>{uc.date_received || "-"}</TableCell>
-                  <TableCell>{uc.date_given || "-"}</TableCell>
+                  <TableCell>{getStatusBadge(uc.current_status)}</TableCell>
+                  <TableCell>{uc.uc_received_date || "-"}</TableCell>
+                  <TableCell>{uc.uc_verified_date || "-"}</TableCell>
+                  <TableCell>{uc.uc_checked_ar_finance_date || "-"}</TableCell>
                   <TableCell>
                     <div className="flex space-x-2">
                       <Button

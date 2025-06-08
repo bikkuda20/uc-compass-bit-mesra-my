@@ -26,9 +26,19 @@ const UCForm = ({ uc, onComplete, onCancel }: UCFormProps) => {
     financialYearId: "",
     piId: "",
     projectCode: "",
+    projectType: "Project",
     dateReceived: "",
     dateGiven: "",
     status: "Pending",
+    
+    // New workflow tracking fields
+    ucReceivedDate: "",
+    ucVerifiedDate: "",
+    ucCheckedArFinanceDate: "",
+    ucSentDeputyComptrollerDate: "",
+    ucSentRegistrarDate: "",
+    ucReturnedRegistrarDate: "",
+    ucHandedOverPiDate: "",
   });
   
   const [files, setFiles] = useState({
@@ -46,9 +56,19 @@ const UCForm = ({ uc, onComplete, onCancel }: UCFormProps) => {
         financialYearId: uc.financial_year?.id || "",
         piId: uc.principal_investigator?.id || "",
         projectCode: uc.project_code || "",
+        projectType: uc.project_type || "Project",
         dateReceived: uc.date_received || "",
         dateGiven: uc.date_given || "",
         status: uc.status || "Pending",
+        
+        // Workflow tracking fields
+        ucReceivedDate: uc.uc_received_date || "",
+        ucVerifiedDate: uc.uc_verified_date || "",
+        ucCheckedArFinanceDate: uc.uc_checked_ar_finance_date || "",
+        ucSentDeputyComptrollerDate: uc.uc_sent_deputy_comptroller_date || "",
+        ucSentRegistrarDate: uc.uc_sent_registrar_date || "",
+        ucReturnedRegistrarDate: uc.uc_returned_registrar_date || "",
+        ucHandedOverPiDate: uc.uc_handed_over_pi_date || "",
       });
     }
   }, [uc]);
@@ -154,6 +174,7 @@ const UCForm = ({ uc, onComplete, onCancel }: UCFormProps) => {
         financial_year_id: formData.financialYearId,
         pi_id: formData.piId,
         project_code: formData.projectCode,
+        project_type: formData.projectType,
         date_received: formData.dateReceived || null,
         date_given: formData.dateGiven || null,
         status: formData.status,
@@ -161,6 +182,16 @@ const UCForm = ({ uc, onComplete, onCancel }: UCFormProps) => {
         uc_file_path: ucFilePath,
         sanction_letter_file_name: sanctionLetterFileName,
         sanction_letter_file_path: sanctionLetterPath,
+        
+        // Workflow tracking fields
+        uc_received_date: formData.ucReceivedDate || null,
+        uc_verified_date: formData.ucVerifiedDate || null,
+        uc_checked_ar_finance_date: formData.ucCheckedArFinanceDate || null,
+        uc_sent_deputy_comptroller_date: formData.ucSentDeputyComptrollerDate || null,
+        uc_sent_registrar_date: formData.ucSentRegistrarDate || null,
+        uc_returned_registrar_date: formData.ucReturnedRegistrarDate || null,
+        uc_handed_over_pi_date: formData.ucHandedOverPiDate || null,
+        
         updated_at: new Date().toISOString(),
       };
 
@@ -208,6 +239,7 @@ const UCForm = ({ uc, onComplete, onCancel }: UCFormProps) => {
   };
 
   const statuses = ["Pending", "Submitted", "Verified"];
+  const projectTypes = ["Project", "Workshop", "Seminar", "Symposium", "Conference"];
 
   const FileUploadCard = ({ 
     title, 
@@ -361,17 +393,36 @@ const UCForm = ({ uc, onComplete, onCancel }: UCFormProps) => {
                   required
                 />
               </div>
+
+              <div>
+                <Label htmlFor="projectType">Project Type</Label>
+                <Select 
+                  value={formData.projectType} 
+                  onValueChange={(value) => handleInputChange("projectType", value)}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {projectTypes.map((type) => (
+                      <SelectItem key={type} value={type}>
+                        {type}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
             </CardContent>
           </Card>
 
-          {/* Tracking Information */}
+          {/* Legacy Tracking Information */}
           <Card>
             <CardHeader>
-              <CardTitle>Tracking Information</CardTitle>
+              <CardTitle>Legacy Information</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <div>
-                <Label htmlFor="dateReceived">Date Received from PI</Label>
+                <Label htmlFor="dateReceived">Date Received from PI (Legacy)</Label>
                 <Input
                   id="dateReceived"
                   type="date"
@@ -381,7 +432,7 @@ const UCForm = ({ uc, onComplete, onCancel }: UCFormProps) => {
               </div>
 
               <div>
-                <Label htmlFor="dateGiven">Date Given to PI</Label>
+                <Label htmlFor="dateGiven">Date Given to PI (Legacy)</Label>
                 <Input
                   id="dateGiven"
                   type="date"
@@ -391,7 +442,7 @@ const UCForm = ({ uc, onComplete, onCancel }: UCFormProps) => {
               </div>
 
               <div>
-                <Label htmlFor="status">Status</Label>
+                <Label htmlFor="status">Status (Legacy)</Label>
                 <Select 
                   value={formData.status} 
                   onValueChange={(value) => handleInputChange("status", value)}
@@ -411,6 +462,86 @@ const UCForm = ({ uc, onComplete, onCancel }: UCFormProps) => {
             </CardContent>
           </Card>
         </div>
+
+        {/* UC Workflow Tracking */}
+        <Card>
+          <CardHeader>
+            <CardTitle>UC Workflow Tracking</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4">
+              <div>
+                <Label htmlFor="ucReceivedDate">1. UC Received Date by PI</Label>
+                <Input
+                  id="ucReceivedDate"
+                  type="date"
+                  value={formData.ucReceivedDate}
+                  onChange={(e) => handleInputChange("ucReceivedDate", e.target.value)}
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="ucVerifiedDate">2. UC Verified by Related Person</Label>
+                <Input
+                  id="ucVerifiedDate"
+                  type="date"
+                  value={formData.ucVerifiedDate}
+                  onChange={(e) => handleInputChange("ucVerifiedDate", e.target.value)}
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="ucCheckedArFinanceDate">3. UC Checked by AR Finance</Label>
+                <Input
+                  id="ucCheckedArFinanceDate"
+                  type="date"
+                  value={formData.ucCheckedArFinanceDate}
+                  onChange={(e) => handleInputChange("ucCheckedArFinanceDate", e.target.value)}
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="ucSentDeputyComptrollerDate">4. UC Sent to Deputy Comptroller</Label>
+                <Input
+                  id="ucSentDeputyComptrollerDate"
+                  type="date"
+                  value={formData.ucSentDeputyComptrollerDate}
+                  onChange={(e) => handleInputChange("ucSentDeputyComptrollerDate", e.target.value)}
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="ucSentRegistrarDate">5. UC Sent to Registrar Office</Label>
+                <Input
+                  id="ucSentRegistrarDate"
+                  type="date"
+                  value={formData.ucSentRegistrarDate}
+                  onChange={(e) => handleInputChange("ucSentRegistrarDate", e.target.value)}
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="ucReturnedRegistrarDate">6. UC Returned from Registrar</Label>
+                <Input
+                  id="ucReturnedRegistrarDate"
+                  type="date"
+                  value={formData.ucReturnedRegistrarDate}
+                  onChange={(e) => handleInputChange("ucReturnedRegistrarDate", e.target.value)}
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="ucHandedOverPiDate">7. UC Handed Over to PI</Label>
+                <Input
+                  id="ucHandedOverPiDate"
+                  type="date"
+                  value={formData.ucHandedOverPiDate}
+                  onChange={(e) => handleInputChange("ucHandedOverPiDate", e.target.value)}
+                />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
 
         {/* File Uploads */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
