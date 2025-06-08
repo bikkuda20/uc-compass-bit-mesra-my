@@ -31,7 +31,7 @@ const UCTracker = () => {
         <SidebarInset>
           <div className="flex-1 bg-gradient-to-br from-green-50 to-blue-100">
             {showForm ? (
-              <UCForm uc={editingUC} onClose={handleClose} />
+              <UCForm uc={editingUC} onComplete={handleClose} onCancel={handleClose} />
             ) : (
               <UCList onEdit={handleEdit} onNew={handleNew} />
             )}
