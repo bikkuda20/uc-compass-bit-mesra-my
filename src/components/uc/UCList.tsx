@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,6 +8,7 @@ import { Search, Download, Edit, Filter, Loader2, Plus, ArrowLeft } from "lucide
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useUCEntries, useFundingAgencies, useFinancialYears } from "@/hooks/useSupabaseData";
 import { useNavigate } from "react-router-dom";
+import UCForm from "./UCForm";
 
 const UCList = () => {
   const { ucs, loading: ucsLoading, refetch } = useUCEntries();
@@ -17,6 +17,8 @@ const UCList = () => {
   const navigate = useNavigate();
   
   const [filteredUcs, setFilteredUcs] = useState<any[]>([]);
+  const [showForm, setShowForm] = useState(false);
+  const [editingUc, setEditingUc] = useState<any>(null);
   const [filters, setFilters] = useState({
     search: "",
     fundingAgency: "all",
@@ -73,12 +75,38 @@ const UCList = () => {
   const statuses = ["Pending", "Submitted", "Verified"];
   const projectTypes = ["Project", "Workshop", "Seminar", "Symposium", "Conference"];
 
+  const handleFormComplete = () => {
+    setShowForm(false);
+    setEditingUc(null);
+    refetch();
+  };
+
+  const handleEditUc = (uc: any) => {
+    setEditingUc(uc);
+    setShowForm(true);
+  };
+
+  const handleAddNew = () => {
+    setEditingUc(null);
+    setShowForm(true);
+  };
+
   if (ucsLoading) {
     return (
       <div className="flex items-center justify-center h-64">
         <Loader2 className="w-8 h-8 animate-spin" />
         <span className="ml-2">Loading UC entries...</span>
       </div>
+    );
+  }
+
+  if (showForm) {
+    return (
+      <UCForm
+        uc={editingUc}
+        onComplete={handleFormComplete}
+        onCancel={() => setShowForm(false)}
+      />
     );
   }
 
@@ -92,7 +120,7 @@ const UCList = () => {
           </Button>
           <h2 className="text-2xl font-bold text-slate-800">UC Tracker</h2>
         </div>
-        <Button onClick={() => navigate('/uc-upload')} className="bg-blue-600 hover:bg-blue-700">
+        <Button onClick={handleAddNew} className="bg-blue-600 hover:bg-blue-700">
           <Plus className="w-4 h-4 mr-2" />
           Add New UC Tracker
         </Button>
@@ -220,7 +248,7 @@ const UCList = () => {
                       <Button
                         size="sm"
                         variant="outline"
-                        onClick={() => console.log("Edit UC:", uc.id)}
+                        onClick={() => handleEditUc(uc)}
                       >
                         <Edit className="w-3 h-3" />
                       </Button>
