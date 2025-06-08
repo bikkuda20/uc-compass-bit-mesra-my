@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -30,7 +31,8 @@ const UCFileManager = () => {
         uc.project_code.toLowerCase().includes(searchQuery.toLowerCase()) ||
         uc.principal_investigator.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
         uc.funding_agency.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        (uc.scheme?.name || '').toLowerCase().includes(searchQuery.toLowerCase())
+        (uc.scheme?.name || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (uc.principal_investigator.department || '').toLowerCase().includes(searchQuery.toLowerCase())
       );
     }
 
@@ -215,7 +217,7 @@ const UCFileManager = () => {
           <div className="relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
             <Input
-              placeholder="Search by project code, PI name, funding agency, or scheme..."
+              placeholder="Search by project code, PI name, funding agency, scheme, or department..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="pl-10"
@@ -239,6 +241,7 @@ const UCFileManager = () => {
                 <TableHeader>
                   <TableRow>
                     <TableHead>PI Name</TableHead>
+                    <TableHead>Deptt. Name</TableHead>
                     <TableHead>Agency</TableHead>
                     <TableHead>Scheme</TableHead>
                     <TableHead>Project Code</TableHead>
@@ -251,6 +254,7 @@ const UCFileManager = () => {
                     filteredUcs.map((uc) => (
                       <TableRow key={uc.id} className="hover:bg-gray-50">
                         <TableCell className="font-medium">{uc.principal_investigator.name}</TableCell>
+                        <TableCell>{uc.principal_investigator.department || 'N/A'}</TableCell>
                         <TableCell>{uc.funding_agency.name}</TableCell>
                         <TableCell>
                           {editingId === uc.id ? (
@@ -359,7 +363,7 @@ const UCFileManager = () => {
                     ))
                   ) : (
                     <TableRow>
-                      <TableCell colSpan={6} className="text-center py-8">
+                      <TableCell colSpan={7} className="text-center py-8">
                         <FileText className="w-12 h-12 mx-auto text-gray-400 mb-4" />
                         <p className="text-gray-500">No UC files found</p>
                       </TableCell>
