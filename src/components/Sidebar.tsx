@@ -1,5 +1,5 @@
 
-import { Home, FileText, Settings, Users, Building, Calendar } from "lucide-react";
+import { Home, FileText, Settings, Users, Building, Calendar, FolderOpen } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 import {
   Sidebar,
@@ -24,6 +24,11 @@ const menuItems = [
     title: "UC Tracker",
     url: "/uc-tracker",
     icon: FileText,
+  },
+  {
+    title: "UC File Manager",
+    url: "/uc-files",
+    icon: FolderOpen,
   },
   {
     title: "Principal Investigators",

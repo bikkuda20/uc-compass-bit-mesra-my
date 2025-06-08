@@ -5,6 +5,8 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Index from "./pages/Index";
+import UCTracker from "./pages/UCTracker";
+import UCFileManager from "./pages/UCFileManager";
 import Investigators from "./pages/Investigators";
 import Agencies from "./pages/Agencies";
 import Years from "./pages/Years";
@@ -21,7 +23,8 @@ const App = () => (
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<Index />} />
-          <Route path="/uc-tracker" element={<Index />} />
+          <Route path="/uc-tracker" element={<UCTracker />} />
+          <Route path="/uc-files" element={<UCFileManager />} />
           <Route path="/investigators" element={<Investigators />} />
           <Route path="/agencies" element={<Agencies />} />
           <Route path="/years" element={<Years />} />

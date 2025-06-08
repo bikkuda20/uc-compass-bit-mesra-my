@@ -1,208 +1,210 @@
 
-import { useState } from "react";
-import { Button } from "@/components/ui/button";
-import { LogOut, Plus, FileText, Users, Calendar, TrendingUp } from "lucide-react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import UCList from "@/components/uc/UCList";
-import UCForm from "@/components/uc/UCForm";
-import { useToast } from "@/hooks/use-toast";
+import { useState, useEffect } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Users, Building, Calendar, FileText, TrendingUp, Clock, CheckCircle } from "lucide-react";
+import { useUCEntries, useFundingAgencies, useFinancialYears, usePrincipalInvestigators } from "@/hooks/useSupabaseData";
 
 const Dashboard = () => {
-  const [currentView, setCurrentView] = useState<"dashboard" | "list" | "form">("dashboard");
-  const [editingUC, setEditingUC] = useState<any>(null);
-  const { toast } = useToast();
+  const { ucs, loading: ucsLoading } = useUCEntries();
+  const { agencies } = useFundingAgencies();
+  const { years } = useFinancialYears();
+  const { pis } = usePrincipalInvestigators();
 
-  const handleLogout = () => {
-    localStorage.removeItem("adminToken");
-    window.location.reload();
+  const [stats, setStats] = useState({
+    totalUCs: 0,
+    pendingUCs: 0,
+    verifiedUCs: 0,
+    submittedUCs: 0,
+  });
+
+  useEffect(() => {
+    if (ucs.length > 0) {
+      const totalUCs = ucs.length;
+      const pendingUCs = ucs.filter(uc => uc.status === 'Pending').length;
+      const verifiedUCs = ucs.filter(uc => uc.status === 'Verified').length;
+      const submittedUCs = ucs.filter(uc => uc.status === 'Submitted').length;
+
+      setStats({
+        totalUCs,
+        pendingUCs,
+        verifiedUCs,
+        submittedUCs,
+      });
+    }
+  }, [ucs]);
+
+  const getActiveYear = () => {
+    return years.find(year => year.is_active)?.year || 'N/A';
   };
 
-  const handleNewUC = () => {
-    setEditingUC(null);
-    setCurrentView("form");
+  const getRecentUCs = () => {
+    return ucs
+      .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+      .slice(0, 5);
   };
 
-  const handleEditUC = (uc: any) => {
-    setEditingUC(uc);
-    setCurrentView("form");
+  const getStatusBadge = (status: string) => {
+    const statusConfig = {
+      Pending: { variant: "secondary" as const, className: "bg-orange-100 text-orange-800" },
+      Submitted: { variant: "secondary" as const, className: "bg-blue-100 text-blue-800" },
+      Verified: { variant: "secondary" as const, className: "bg-green-100 text-green-800" },
+    };
+    
+    const config = statusConfig[status as keyof typeof statusConfig] || statusConfig.Pending;
+    return (
+      <Badge variant={config.variant} className={config.className}>
+        {status}
+      </Badge>
+    );
   };
 
-  const handleFormComplete = () => {
-    setCurrentView("list");
-    setEditingUC(null);
-    toast({
-      title: "Success",
-      description: editingUC ? "UC updated successfully" : "UC created successfully",
-    });
-  };
-
-  const stats = [
-    {
-      title: "Total UCs",
-      value: "24",
-      description: "All UC entries",
-      icon: FileText,
-      color: "text-blue-600",
-    },
-    {
-      title: "Pending UCs",
-      value: "8",
-      description: "Awaiting submission",
-      icon: TrendingUp,
-      color: "text-orange-600",
-    },
-    {
-      title: "Active PIs",
-      value: "12",
-      description: "Principal Investigators",
-      icon: Users,
-      color: "text-green-600",
-    },
-    {
-      title: "Current FY",
-      value: "2024-25",
-      description: "Financial Year",
-      icon: Calendar,
-      color: "text-purple-600",
-    },
-  ];
-
-  return (
-    <div className="min-h-screen bg-slate-50">
-      {/* Header */}
-      <header className="bg-white border-b border-slate-200 px-6 py-4">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold text-slate-800">
-              UC Management System
-            </h1>
-            <p className="text-sm text-slate-600">
-              Birla Institute of Technology, Mesra - R&D Cell
-            </p>
-          </div>
-          <div className="flex items-center space-x-4">
-            <Button
-              onClick={handleNewUC}
-              className="bg-blue-600 hover:bg-blue-700"
-            >
-              <Plus className="w-4 h-4 mr-2" />
-              New UC Entry
-            </Button>
-            <Button 
-              variant="outline" 
-              onClick={handleLogout}
-              className="text-slate-600"
-            >
-              <LogOut className="w-4 h-4 mr-2" />
-              Logout
-            </Button>
-          </div>
-        </div>
-      </header>
-
-      {/* Navigation */}
-      <nav className="bg-white border-b border-slate-200 px-6 py-2">
-        <div className="flex space-x-6">
-          <button
-            onClick={() => setCurrentView("dashboard")}
-            className={`px-3 py-2 text-sm font-medium rounded-md transition-colors ${
-              currentView === "dashboard"
-                ? "bg-blue-100 text-blue-700"
-                : "text-slate-600 hover:text-slate-800 hover:bg-slate-100"
-            }`}
-          >
-            Dashboard
-          </button>
-          <button
-            onClick={() => setCurrentView("list")}
-            className={`px-3 py-2 text-sm font-medium rounded-md transition-colors ${
-              currentView === "list"
-                ? "bg-blue-100 text-blue-700"
-                : "text-slate-600 hover:text-slate-800 hover:bg-slate-100"
-            }`}
-          >
-            UC Tracker
-          </button>
-        </div>
-      </nav>
-
-      {/* Main Content */}
-      <main className="p-6">
-        {currentView === "dashboard" && (
-          <div className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-              {stats.map((stat) => {
-                const Icon = stat.icon;
-                return (
-                  <Card key={stat.title}>
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                      <CardTitle className="text-sm font-medium text-slate-600">
-                        {stat.title}
-                      </CardTitle>
-                      <Icon className={`h-4 w-4 ${stat.color}`} />
-                    </CardHeader>
-                    <CardContent>
-                      <div className="text-2xl font-bold text-slate-800">
-                        {stat.value}
-                      </div>
-                      <p className="text-xs text-slate-600">
-                        {stat.description}
-                      </p>
-                    </CardContent>
-                  </Card>
-                );
-              })}
-            </div>
-
-            <Card>
-              <CardHeader>
-                <CardTitle>Quick Actions</CardTitle>
-                <CardDescription>
-                  Common tasks for UC management
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <Button 
-                  onClick={handleNewUC}
-                  className="justify-start h-12"
-                  variant="outline"
-                >
-                  <Plus className="w-4 h-4 mr-2" />
-                  Add New UC Entry
-                </Button>
-                <Button 
-                  onClick={() => setCurrentView("list")}
-                  className="justify-start h-12"
-                  variant="outline"
-                >
-                  <FileText className="w-4 h-4 mr-2" />
-                  View All UCs
-                </Button>
-                <Button 
-                  className="justify-start h-12"
-                  variant="outline"
-                  disabled
-                >
-                  <Calendar className="w-4 h-4 mr-2" />
-                  Generate Reports
-                </Button>
+  if (ucsLoading) {
+    return (
+      <div className="p-6 space-y-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          {[...Array(4)].map((_, i) => (
+            <Card key={i} className="animate-pulse">
+              <CardContent className="p-6">
+                <div className="h-4 bg-gray-200 rounded w-1/2 mb-2"></div>
+                <div className="h-8 bg-gray-200 rounded w-3/4"></div>
               </CardContent>
             </Card>
-          </div>
-        )}
+          ))}
+        </div>
+      </div>
+    );
+  }
 
-        {currentView === "list" && (
-          <UCList onEdit={handleEditUC} onNew={handleNewUC} />
-        )}
+  return (
+    <div className="p-6 space-y-6 bg-gradient-to-br from-blue-50 to-indigo-100 min-h-screen">
+      <div className="mb-8">
+        <h1 className="text-3xl font-bold text-gray-900 mb-2">Dashboard</h1>
+        <p className="text-gray-600">Welcome to the UC Management System</p>
+      </div>
 
-        {currentView === "form" && (
-          <UCForm 
-            uc={editingUC} 
-            onComplete={handleFormComplete}
-            onCancel={() => setCurrentView("list")}
-          />
-        )}
-      </main>
+      {/* Stats Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <Card className="bg-gradient-to-r from-blue-500 to-blue-600 text-white border-0 shadow-lg">
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-blue-100 text-sm font-medium">Total UCs</p>
+                <p className="text-3xl font-bold">{stats.totalUCs}</p>
+              </div>
+              <FileText className="h-8 w-8 text-blue-200" />
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="bg-gradient-to-r from-orange-500 to-orange-600 text-white border-0 shadow-lg">
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-orange-100 text-sm font-medium">Pending UCs</p>
+                <p className="text-3xl font-bold">{stats.pendingUCs}</p>
+              </div>
+              <Clock className="h-8 w-8 text-orange-200" />
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="bg-gradient-to-r from-green-500 to-green-600 text-white border-0 shadow-lg">
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-green-100 text-sm font-medium">Verified UCs</p>
+                <p className="text-3xl font-bold">{stats.verifiedUCs}</p>
+              </div>
+              <CheckCircle className="h-8 w-8 text-green-200" />
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="bg-gradient-to-r from-purple-500 to-purple-600 text-white border-0 shadow-lg">
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-purple-100 text-sm font-medium">Submitted UCs</p>
+                <p className="text-3xl font-bold">{stats.submittedUCs}</p>
+              </div>
+              <TrendingUp className="h-8 w-8 text-purple-200" />
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* System Overview */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <Card className="shadow-lg border-0">
+          <CardHeader className="pb-3">
+            <CardTitle className="flex items-center text-gray-900">
+              <Users className="h-5 w-5 mr-2 text-blue-600" />
+              Principal Investigators
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-3xl font-bold text-blue-600 mb-2">{pis.length}</div>
+            <p className="text-gray-600 text-sm">Total registered PIs</p>
+          </CardContent>
+        </Card>
+
+        <Card className="shadow-lg border-0">
+          <CardHeader className="pb-3">
+            <CardTitle className="flex items-center text-gray-900">
+              <Building className="h-5 w-5 mr-2 text-green-600" />
+              Funding Agencies
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-3xl font-bold text-green-600 mb-2">{agencies.length}</div>
+            <p className="text-gray-600 text-sm">Active agencies</p>
+          </CardContent>
+        </Card>
+
+        <Card className="shadow-lg border-0">
+          <CardHeader className="pb-3">
+            <CardTitle className="flex items-center text-gray-900">
+              <Calendar className="h-5 w-5 mr-2 text-purple-600" />
+              Active Financial Year
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-3xl font-bold text-purple-600 mb-2">{getActiveYear()}</div>
+            <p className="text-gray-600 text-sm">Current fiscal year</p>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Recent UCs */}
+      <Card className="shadow-lg border-0">
+        <CardHeader>
+          <CardTitle className="text-gray-900">Recent UC Submissions</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {getRecentUCs().length > 0 ? (
+            <div className="space-y-4">
+              {getRecentUCs().map((uc) => (
+                <div key={uc.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                  <div className="flex-1">
+                    <p className="font-medium text-gray-900">{uc.project_code}</p>
+                    <p className="text-sm text-gray-600">{uc.principal_investigator.name}</p>
+                    <p className="text-xs text-gray-500">{uc.funding_agency.name} • {uc.financial_year.year}</p>
+                  </div>
+                  <div className="text-right">
+                    {getStatusBadge(uc.status)}
+                    <p className="text-xs text-gray-500 mt-1">
+                      {new Date(uc.created_at).toLocaleDateString()}
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-gray-500 text-center py-8">No UC submissions found</p>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 };
