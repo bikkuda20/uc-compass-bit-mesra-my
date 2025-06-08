@@ -85,10 +85,10 @@ const UCUpload = () => {
       return;
     }
 
-    if (!files.ucFile || !files.sanctionLetter) {
+    if (!files.ucFile) {
       toast({
-        title: "Files Required",
-        description: "Please upload both UC file and Sanction Letter",
+        title: "UC File Required",
+        description: "Please upload the UC file",
         variant: "destructive",
       });
       return;
@@ -122,7 +122,7 @@ const UCUpload = () => {
         }
       }
 
-      // Upload sanction letter
+      // Upload sanction letter (optional)
       if (files.sanctionLetter) {
         const timestamp = Date.now();
         const sanctionPath = `sanction-letters/${timestamp}_${files.sanctionLetter.name}`;
@@ -154,8 +154,8 @@ const UCUpload = () => {
         status: formData.status,
         uc_file_name: ucFileName,
         uc_file_path: ucFilePath,
-        sanction_letter_file_name: sanctionLetterFileName,
-        sanction_letter_file_path: sanctionLetterPath,
+        sanction_letter_file_name: sanctionLetterFileName || "",
+        sanction_letter_file_path: sanctionLetterPath || "",
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
       };
@@ -206,15 +206,19 @@ const UCUpload = () => {
   const FileUploadCard = ({ 
     title, 
     field, 
-    currentFile
+    currentFile,
+    isRequired = false
   }: { 
     title: string; 
     field: "ucFile" | "sanctionLetter"; 
     currentFile: File | null;
+    isRequired?: boolean;
   }) => (
     <Card>
       <CardHeader>
-        <CardTitle className="text-sm">{title}</CardTitle>
+        <CardTitle className="text-sm">
+          {title} {isRequired && <span className="text-red-500">*</span>}
+        </CardTitle>
       </CardHeader>
       <CardContent>
         {currentFile ? (
@@ -236,7 +240,7 @@ const UCUpload = () => {
               accept=".pdf"
               onChange={(e) => handleFileChange(field, e.target.files?.[0] || null)}
               className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-              required
+              required={isRequired}
             />
             <div className="flex items-center justify-center p-6 border-2 border-dashed border-slate-300 rounded-md hover:border-blue-400 transition-colors">
               <Upload className="w-6 h-6 text-slate-400 mr-2" />
@@ -426,14 +430,16 @@ const UCUpload = () => {
         {/* File Uploads */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <FileUploadCard
-            title="UC File *"
+            title="UC File"
             field="ucFile"
             currentFile={files.ucFile}
+            isRequired={true}
           />
           <FileUploadCard
-            title="Sanction Letter *"
+            title="Sanction Letter"
             field="sanctionLetter"
             currentFile={files.sanctionLetter}
+            isRequired={false}
           />
         </div>
 

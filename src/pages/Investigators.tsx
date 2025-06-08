@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -19,6 +20,7 @@ const Investigators = () => {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [department, setDepartment] = useState("");
+  const [projectCode, setProjectCode] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
   const { pis, loading, refetch } = usePrincipalInvestigators();
   const { toast } = useToast();
@@ -31,7 +33,8 @@ const Investigators = () => {
       pis.filter((pi) =>
         pi.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
         (pi.email && pi.email.toLowerCase().includes(searchQuery.toLowerCase())) ||
-        (pi.department && pi.department.toLowerCase().includes(searchQuery.toLowerCase()))
+        (pi.department && pi.department.toLowerCase().includes(searchQuery.toLowerCase())) ||
+        (pi.project_code && pi.project_code.toLowerCase().includes(searchQuery.toLowerCase()))
       )
     );
   }, [searchQuery, pis]);
@@ -40,7 +43,7 @@ const Investigators = () => {
     try {
       const { error } = await supabase
         .from('principal_investigators')
-        .insert({ name, email, department });
+        .insert({ name, email, department, project_code: projectCode });
 
       if (error) {
         console.error("Error creating PI:", error);
@@ -60,6 +63,7 @@ const Investigators = () => {
       setName("");
       setEmail("");
       setDepartment("");
+      setProjectCode("");
       refetch();
     } catch (error) {
       console.error("Error creating PI:", error);
@@ -76,6 +80,7 @@ const Investigators = () => {
     setName(pi.name);
     setEmail(pi.email || "");
     setDepartment(pi.department || "");
+    setProjectCode(pi.project_code || "");
     setIsEditFormOpen(true);
   };
 
@@ -85,7 +90,7 @@ const Investigators = () => {
     try {
       const { error } = await supabase
         .from('principal_investigators')
-        .update({ name, email, department })
+        .update({ name, email, department, project_code: projectCode })
         .eq('id', selectedPI.id);
 
       if (error) {
@@ -107,6 +112,7 @@ const Investigators = () => {
       setName("");
       setEmail("");
       setDepartment("");
+      setProjectCode("");
       refetch();
     } catch (error) {
       console.error("Error updating PI:", error);
@@ -184,7 +190,7 @@ const Investigators = () => {
           <div className="relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
             <Input
-              placeholder="Search by name, email, or department..."
+              placeholder="Search by name, email, department, or project code..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="pl-10"
@@ -209,6 +215,7 @@ const Investigators = () => {
                   <TableHead>Name</TableHead>
                   <TableHead>Email</TableHead>
                   <TableHead>Department</TableHead>
+                  <TableHead>Project Code</TableHead>
                   <TableHead>Actions</TableHead>
                 </TableRow>
               </TableHeader>
@@ -218,6 +225,7 @@ const Investigators = () => {
                     <TableCell className="font-medium">{pi.name}</TableCell>
                     <TableCell>{pi.email || "-"}</TableCell>
                     <TableCell>{pi.department || "-"}</TableCell>
+                    <TableCell>{pi.project_code || "-"}</TableCell>
                     <TableCell>
                       <div className="flex space-x-2">
                         <Button
@@ -285,6 +293,17 @@ const Investigators = () => {
                 className="col-span-3"
               />
             </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="projectCode" className="text-right">
+                Project Code
+              </Label>
+              <Input
+                id="projectCode"
+                value={projectCode}
+                onChange={(e) => setProjectCode(e.target.value)}
+                className="col-span-3"
+              />
+            </div>
           </div>
           <div className="flex justify-end">
             <Button type="button" onClick={handleCreate}>
@@ -332,6 +351,17 @@ const Investigators = () => {
                 id="department"
                 value={department}
                 onChange={(e) => setDepartment(e.target.value)}
+                className="col-span-3"
+              />
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="projectCode" className="text-right">
+                Project Code
+              </Label>
+              <Input
+                id="projectCode"
+                value={projectCode}
+                onChange={(e) => setProjectCode(e.target.value)}
                 className="col-span-3"
               />
             </div>
