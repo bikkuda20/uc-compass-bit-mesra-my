@@ -99,14 +99,19 @@ const Auth = () => {
         <CardHeader className="text-center space-y-4">
           <div className="flex justify-center">
             <img 
-              src="/logo.png" 
-              alt="UC Management Logo" 
-              className="h-16 w-auto"
+              src="/lovable-uploads/e1d17591-b0a5-4e7c-8df4-2212c319f132.png" 
+              alt="BIT Mesra Logo" 
+              className="h-20 w-20 rounded-full"
             />
           </div>
           <div>
-            <CardTitle className="text-2xl font-bold text-gray-900">UC Management System</CardTitle>
-            <p className="text-gray-600 mt-2">Access your account</p>
+            <CardTitle className="text-2xl font-bold text-gray-900">
+              Birla Institute of Technology, Mesra
+            </CardTitle>
+            <p className="text-lg font-semibold text-blue-600 mt-1">
+              Research and Development Cell
+            </p>
+            <p className="text-gray-600 mt-2">UC Management System</p>
           </div>
         </CardHeader>
         <CardContent>

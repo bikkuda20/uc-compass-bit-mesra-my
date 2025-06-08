@@ -23,7 +23,7 @@ const navigation = [
   { name: "UC Files", href: "/uc-files", icon: FolderOpen },
   { name: "Investigators", href: "/investigators", icon: Users },
   { name: "Agencies", href: "/agencies", icon: Building2 },
-  { name: "Years", href: "/years", icon: Calendar },
+  { name: "Financial Year", href: "/years", icon: Calendar },
   { name: "User Management", href: "/users", icon: UserCog },
   { name: "Settings", href: "/settings", icon: Settings },
 ];
@@ -58,15 +58,14 @@ export const Sidebar = () => {
         <div className="flex items-center h-16 flex-shrink-0 px-4 bg-gradient-to-r from-blue-600 to-purple-600">
           <div className="flex items-center space-x-3">
             <img 
-              src="/logo.png" 
-              alt="UC Management Logo" 
-              className="h-8 w-auto"
-              onError={(e) => {
-                console.log('Logo failed to load');
-                e.currentTarget.style.display = 'none';
-              }}
+              src="/lovable-uploads/e1d17591-b0a5-4e7c-8df4-2212c319f132.png" 
+              alt="BIT Mesra Logo" 
+              className="h-10 w-10 rounded-full bg-white p-1"
             />
-            <h1 className="text-white text-lg font-semibold">UC Management</h1>
+            <div>
+              <h1 className="text-white text-sm font-semibold">UC Management</h1>
+              <p className="text-white text-xs opacity-90">R&D Cell</p>
+            </div>
           </div>
         </div>
         <div className="flex-1 flex flex-col pt-5 pb-4 overflow-y-auto">
