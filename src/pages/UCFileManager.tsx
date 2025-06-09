@@ -57,6 +57,7 @@ const UCFileManager = () => {
         throw error;
       }
 
+      console.log('Fetched UC entries:', data);
       setUcEntries(data || []);
       setFilteredEntries(data || []);
     } catch (error: any) {
@@ -73,15 +74,34 @@ const UCFileManager = () => {
 
   const checkFileExists = async (filePath: string) => {
     try {
-      const { data, error } = await supabase.storage
-        .from('uc_files')
-        .list('', {
-          search: filePath
-        });
+      console.log('Checking if file exists:', filePath);
       
-      return !error && data && data.length > 0;
+      // Try both bucket names to see which one has the file
+      const buckets = ['uc-files', 'uc_files'];
+      
+      for (const bucketName of buckets) {
+        try {
+          const { data, error } = await supabase.storage
+            .from(bucketName)
+            .list('', {
+              search: filePath.split('/').pop() // Get just the filename
+            });
+          
+          console.log(`Checking bucket ${bucketName}:`, { data, error });
+          
+          if (!error && data && data.length > 0) {
+            console.log(`File found in bucket: ${bucketName}`);
+            return { exists: true, bucket: bucketName };
+          }
+        } catch (err) {
+          console.error(`Error checking bucket ${bucketName}:`, err);
+        }
+      }
+      
+      return { exists: false, bucket: null };
     } catch (error) {
-      return false;
+      console.error('Error in checkFileExists:', error);
+      return { exists: false, bucket: null };
     }
   };
 
@@ -91,10 +111,10 @@ const UCFileManager = () => {
       
       // Try to delete the file from storage if it exists
       if (ucEntry?.uc_file_path) {
-        const fileExists = await checkFileExists(ucEntry.uc_file_path);
-        if (fileExists) {
+        const fileCheck = await checkFileExists(ucEntry.uc_file_path);
+        if (fileCheck.exists && fileCheck.bucket) {
           const { error: storageError } = await supabase.storage
-            .from('uc_files')
+            .from(fileCheck.bucket)
             .remove([ucEntry.uc_file_path]);
           
           if (storageError) {
@@ -131,9 +151,11 @@ const UCFileManager = () => {
 
   const downloadFile = async (filePath: string, fileName: string) => {
     try {
-      // Check if file exists first
-      const fileExists = await checkFileExists(filePath);
-      if (!fileExists) {
+      console.log('Attempting to download file:', filePath);
+      
+      // Check if file exists and get the correct bucket
+      const fileCheck = await checkFileExists(filePath);
+      if (!fileCheck.exists || !fileCheck.bucket) {
         toast({
           title: "File Not Found",
           description: "The requested file does not exist in storage",
@@ -142,11 +164,14 @@ const UCFileManager = () => {
         return;
       }
 
+      console.log(`Downloading from bucket: ${fileCheck.bucket}`);
+      
       const { data, error } = await supabase.storage
-        .from('uc_files')
+        .from(fileCheck.bucket)
         .download(filePath);
 
       if (error) {
+        console.error('Download error:', error);
         throw error;
       }
 
@@ -175,9 +200,11 @@ const UCFileManager = () => {
 
   const previewFile = async (filePath: string) => {
     try {
-      // Check if file exists first
-      const fileExists = await checkFileExists(filePath);
-      if (!fileExists) {
+      console.log('Attempting to preview file:', filePath);
+      
+      // Check if file exists and get the correct bucket
+      const fileCheck = await checkFileExists(filePath);
+      if (!fileCheck.exists || !fileCheck.bucket) {
         toast({
           title: "File Not Found",
           description: "The requested file does not exist in storage",
@@ -186,11 +213,14 @@ const UCFileManager = () => {
         return;
       }
 
+      console.log(`Creating signed URL from bucket: ${fileCheck.bucket}`);
+      
       const { data, error } = await supabase.storage
-        .from('uc_files')
+        .from(fileCheck.bucket)
         .createSignedUrl(filePath, 60);
 
       if (error) {
+        console.error('Preview error:', error);
         throw error;
       }
 
@@ -207,9 +237,11 @@ const UCFileManager = () => {
 
   const printFile = async (filePath: string) => {
     try {
-      // Check if file exists first
-      const fileExists = await checkFileExists(filePath);
-      if (!fileExists) {
+      console.log('Attempting to print file:', filePath);
+      
+      // Check if file exists and get the correct bucket
+      const fileCheck = await checkFileExists(filePath);
+      if (!fileCheck.exists || !fileCheck.bucket) {
         toast({
           title: "File Not Found",
           description: "The requested file does not exist in storage",
@@ -218,11 +250,14 @@ const UCFileManager = () => {
         return;
       }
 
+      console.log(`Creating signed URL for printing from bucket: ${fileCheck.bucket}`);
+      
       const { data, error } = await supabase.storage
-        .from('uc_files')
+        .from(fileCheck.bucket)
         .createSignedUrl(filePath, 60);
 
       if (error) {
+        console.error('Print error:', error);
         throw error;
       }
 
@@ -354,6 +389,7 @@ const UCFileManager = () => {
                                     size="sm"
                                     onClick={() => previewFile(entry.uc_file_path)}
                                     disabled={!entry.uc_file_path}
+                                    title="Preview"
                                   >
                                     <Eye className="h-4 w-4" />
                                   </Button>
@@ -362,6 +398,7 @@ const UCFileManager = () => {
                                     size="sm"
                                     onClick={() => downloadFile(entry.uc_file_path, entry.uc_file_name)}
                                     disabled={!entry.uc_file_path}
+                                    title="Download"
                                   >
                                     <Download className="h-4 w-4" />
                                   </Button>
@@ -369,6 +406,7 @@ const UCFileManager = () => {
                                     variant="ghost"
                                     size="sm"
                                     onClick={() => editUCEntry(entry.id)}
+                                    title="Edit"
                                   >
                                     <Edit className="h-4 w-4" />
                                   </Button>
@@ -377,12 +415,13 @@ const UCFileManager = () => {
                                     size="sm"
                                     onClick={() => printFile(entry.uc_file_path)}
                                     disabled={!entry.uc_file_path}
+                                    title="Print"
                                   >
                                     <Printer className="h-4 w-4" />
                                   </Button>
                                   <AlertDialog>
                                     <AlertDialogTrigger asChild>
-                                      <Button variant="ghost" size="sm" className="text-red-500 hover:text-red-700">
+                                      <Button variant="ghost" size="sm" className="text-red-500 hover:text-red-700" title="Delete">
                                         <Trash2 className="h-4 w-4" />
                                       </Button>
                                     </AlertDialogTrigger>
