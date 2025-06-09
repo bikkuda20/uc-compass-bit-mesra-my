@@ -1,3 +1,4 @@
+
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -5,25 +6,25 @@ export const useFileOperations = () => {
   const { toast } = useToast();
 
   const getCleanFilePath = (filePath: string) => {
-    // Handle the doubled path issue: uc-files/uc-files/filename.pdf
+    // The files are actually stored as uc-files/uc-files/filename.pdf
+    // But the database stores them as uc-files/filename.pdf
     let cleanPath = filePath;
     
-    // If the path starts with uc-files/, remove it
-    if (cleanPath.startsWith('uc-files/')) {
-      cleanPath = cleanPath.replace('uc-files/', '');
+    console.log('Input file path:', filePath);
+    
+    // If the path doesn't start with uc-files/, add it
+    if (!cleanPath.startsWith('uc-files/')) {
+      cleanPath = `uc-files/${cleanPath}`;
     }
     
-    // If after cleaning, it still starts with uc-files/, it means we had a doubled path
-    // In this case, keep the uc-files/ prefix for the actual storage path
-    if (cleanPath.startsWith('uc-files/')) {
-      // This is the correct format for storage access
-      console.log('Original path:', filePath, 'Clean path for storage:', cleanPath);
-      return cleanPath;
+    // Since files are actually stored with doubled path, we need uc-files/uc-files/filename
+    // But if it already has the doubled path, don't add another prefix
+    if (!cleanPath.startsWith('uc-files/uc-files/')) {
+      // Replace the first uc-files/ with uc-files/uc-files/
+      cleanPath = cleanPath.replace('uc-files/', 'uc-files/uc-files/');
     }
     
-    // If we don't have uc-files/ prefix after cleaning, add it back
-    cleanPath = `uc-files/${cleanPath}`;
-    console.log('Original path:', filePath, 'Clean path for storage:', cleanPath);
+    console.log('Final storage path:', cleanPath);
     return cleanPath;
   };
 
@@ -34,29 +35,31 @@ export const useFileOperations = () => {
       const cleanPath = getCleanFilePath(filePath);
       console.log('Checking for clean path:', cleanPath);
       
-      // List all files in the bucket to debug
-      const { data: allFiles, error: listError } = await supabase.storage
+      // Try to get the file info directly instead of listing all files
+      const { data, error } = await supabase.storage
         .from('uc-files')
-        .list('', {
+        .list('uc-files', {
           limit: 100
         });
       
-      console.log('All files in bucket:', allFiles);
+      console.log('Files in uc-files folder:', data);
       
-      if (listError) {
-        console.error('Error listing files:', listError);
+      if (error) {
+        console.error('Error listing files:', error);
         return false;
       }
       
-      // Check if the file exists in the list - compare against the full path including uc-files/
-      const fileExists = allFiles && allFiles.some(file => {
-        const fullPath = `uc-files/${file.name}`;
-        console.log('Comparing:', fullPath, 'with:', cleanPath);
-        return fullPath === cleanPath || file.name === cleanPath;
+      // Extract just the filename from the clean path
+      const fileName = cleanPath.replace('uc-files/uc-files/', '');
+      console.log('Looking for filename:', fileName);
+      
+      // Check if the file exists in the list
+      const fileExists = data && data.some(file => {
+        console.log('Comparing file:', file.name, 'with:', fileName);
+        return file.name === fileName;
       });
       
       console.log('File exists check result:', fileExists);
-      
       return fileExists;
     } catch (error) {
       console.error('Error checking file existence:', error);
@@ -75,7 +78,7 @@ export const useFileOperations = () => {
       if (!fileExists) {
         toast({
           title: "File Not Found",
-          description: `The file "${cleanPath}" does not exist in storage. Please check if the file was uploaded correctly.`,
+          description: `The file "${fileName}" does not exist in storage. Please check if the file was uploaded correctly.`,
           variant: "destructive",
         });
         return;
@@ -125,7 +128,7 @@ export const useFileOperations = () => {
       if (!fileExists) {
         toast({
           title: "File Not Found",
-          description: `The file "${cleanPath}" does not exist in storage. Please check if the file was uploaded correctly.`,
+          description: `The file does not exist in storage. Please check if the file was uploaded correctly.`,
           variant: "destructive",
         });
         return;
@@ -170,9 +173,9 @@ export const useFileOperations = () => {
       if (!fileExists) {
         toast({
           title: "File Not Found",
-          description: `The file "${cleanPath}" does not exist in storage. Please check if the file was uploaded correctly.`,
+          description: `The file does not exist in storage. Please check if the file was uploaded correctly.`,
           variant: "destructive",
-        });
+      });
         return;
       }
 
