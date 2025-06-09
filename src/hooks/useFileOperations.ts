@@ -6,10 +6,13 @@ export const useFileOperations = () => {
   const { toast } = useToast();
 
   const getCleanFilePath = (filePath: string) => {
-    if (filePath.startsWith('uc-files/')) {
-      return filePath.replace('uc-files/', '');
+    // Remove any uc-files/ prefix if it exists
+    let cleanPath = filePath;
+    if (cleanPath.startsWith('uc-files/')) {
+      cleanPath = cleanPath.replace('uc-files/', '');
     }
-    return filePath;
+    console.log('Original path:', filePath, 'Clean path:', cleanPath);
+    return cleanPath;
   };
 
   const checkFileExists = async (filePath: string) => {
@@ -17,23 +20,25 @@ export const useFileOperations = () => {
       console.log('Checking file existence for path:', filePath);
       
       const cleanPath = getCleanFilePath(filePath);
-      console.log('Clean path:', cleanPath);
+      console.log('Checking for clean path:', cleanPath);
       
-      const { data, error } = await supabase.storage
+      // List all files in the bucket to debug
+      const { data: allFiles, error: listError } = await supabase.storage
         .from('uc-files')
         .list('', {
-          search: cleanPath
+          limit: 100
         });
       
-      console.log('File existence check result:', { data, error, cleanPath });
+      console.log('All files in bucket:', allFiles);
       
-      if (error) {
-        console.error('Storage error during file check:', error);
+      if (listError) {
+        console.error('Error listing files:', listError);
         return false;
       }
       
-      const fileExists = data && data.some(file => file.name === cleanPath);
-      console.log('File exists:', fileExists);
+      // Check if the file exists in the list
+      const fileExists = allFiles && allFiles.some(file => file.name === cleanPath);
+      console.log('File exists check result:', fileExists);
       
       return fileExists;
     } catch (error) {
@@ -44,7 +49,7 @@ export const useFileOperations = () => {
 
   const downloadFile = async (filePath: string, fileName: string) => {
     try {
-      console.log('Downloading file:', filePath);
+      console.log('Downloading file with path:', filePath);
       
       const cleanPath = getCleanFilePath(filePath);
       console.log('Clean download path:', cleanPath);
@@ -53,7 +58,7 @@ export const useFileOperations = () => {
       if (!fileExists) {
         toast({
           title: "File Not Found",
-          description: "The requested file does not exist in storage",
+          description: `The file "${cleanPath}" does not exist in storage. Please check if the file was uploaded correctly.`,
           variant: "destructive",
         });
         return;
@@ -68,6 +73,7 @@ export const useFileOperations = () => {
         throw error;
       }
 
+      // Create download link
       const url = window.URL.createObjectURL(data);
       const a = document.createElement('a');
       a.href = url;
@@ -93,7 +99,7 @@ export const useFileOperations = () => {
 
   const previewFile = async (filePath: string) => {
     try {
-      console.log('Previewing file:', filePath);
+      console.log('Previewing file with path:', filePath);
       
       const cleanPath = getCleanFilePath(filePath);
       console.log('Clean preview path:', cleanPath);
@@ -102,7 +108,7 @@ export const useFileOperations = () => {
       if (!fileExists) {
         toast({
           title: "File Not Found",
-          description: "The requested file does not exist in storage",
+          description: `The file "${cleanPath}" does not exist in storage. Please check if the file was uploaded correctly.`,
           variant: "destructive",
         });
         return;
@@ -138,15 +144,16 @@ export const useFileOperations = () => {
 
   const printFile = async (filePath: string) => {
     try {
-      console.log('Printing file:', filePath);
+      console.log('Printing file with path:', filePath);
       
       const cleanPath = getCleanFilePath(filePath);
+      console.log('Clean print path:', cleanPath);
       
       const fileExists = await checkFileExists(filePath);
       if (!fileExists) {
         toast({
           title: "File Not Found",
-          description: "The requested file does not exist in storage",
+          description: `The file "${cleanPath}" does not exist in storage. Please check if the file was uploaded correctly.`,
           variant: "destructive",
         });
         return;
