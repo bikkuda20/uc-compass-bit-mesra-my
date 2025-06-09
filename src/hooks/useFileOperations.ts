@@ -1,4 +1,3 @@
-
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -6,12 +5,25 @@ export const useFileOperations = () => {
   const { toast } = useToast();
 
   const getCleanFilePath = (filePath: string) => {
-    // Remove any uc-files/ prefix if it exists
+    // Handle the doubled path issue: uc-files/uc-files/filename.pdf
     let cleanPath = filePath;
+    
+    // If the path starts with uc-files/, remove it
     if (cleanPath.startsWith('uc-files/')) {
       cleanPath = cleanPath.replace('uc-files/', '');
     }
-    console.log('Original path:', filePath, 'Clean path:', cleanPath);
+    
+    // If after cleaning, it still starts with uc-files/, it means we had a doubled path
+    // In this case, keep the uc-files/ prefix for the actual storage path
+    if (cleanPath.startsWith('uc-files/')) {
+      // This is the correct format for storage access
+      console.log('Original path:', filePath, 'Clean path for storage:', cleanPath);
+      return cleanPath;
+    }
+    
+    // If we don't have uc-files/ prefix after cleaning, add it back
+    cleanPath = `uc-files/${cleanPath}`;
+    console.log('Original path:', filePath, 'Clean path for storage:', cleanPath);
     return cleanPath;
   };
 
@@ -36,8 +48,13 @@ export const useFileOperations = () => {
         return false;
       }
       
-      // Check if the file exists in the list
-      const fileExists = allFiles && allFiles.some(file => file.name === cleanPath);
+      // Check if the file exists in the list - compare against the full path including uc-files/
+      const fileExists = allFiles && allFiles.some(file => {
+        const fullPath = `uc-files/${file.name}`;
+        console.log('Comparing:', fullPath, 'with:', cleanPath);
+        return fullPath === cleanPath || file.name === cleanPath;
+      });
+      
       console.log('File exists check result:', fileExists);
       
       return fileExists;
