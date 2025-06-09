@@ -80,30 +80,42 @@ const UCFileManager = () => {
     }
   };
 
+  const getCleanFilePath = (filePath: string) => {
+    // Remove bucket prefix if it exists
+    if (filePath.startsWith('uc-files/')) {
+      return filePath.replace('uc-files/', '');
+    }
+    return filePath;
+  };
+
   const checkFileExists = async (filePath: string) => {
     try {
-      console.log('Checking file existence:', filePath);
+      console.log('Checking file existence for path:', filePath);
       
-      // Extract filename from path
-      const fileName = filePath.includes('/') ? filePath.split('/').pop() : filePath;
+      const cleanPath = getCleanFilePath(filePath);
+      console.log('Clean path:', cleanPath);
       
-      // Check if file exists in uc-files bucket
+      // Try to get the file metadata to check if it exists
       const { data, error } = await supabase.storage
         .from('uc-files')
         .list('', {
-          search: fileName
+          search: cleanPath
         });
       
-      console.log('File check result:', { data, error, fileName });
+      console.log('File existence check result:', { data, error, cleanPath });
       
       if (error) {
-        console.error('Storage error:', error);
+        console.error('Storage error during file check:', error);
         return false;
       }
       
-      return data && data.length > 0;
+      // Check if the file exists in the list
+      const fileExists = data && data.some(file => file.name === cleanPath);
+      console.log('File exists:', fileExists);
+      
+      return fileExists;
     } catch (error) {
-      console.error('Error checking file:', error);
+      console.error('Error checking file existence:', error);
       return false;
     }
   };
@@ -111,6 +123,9 @@ const UCFileManager = () => {
   const downloadFile = async (filePath: string, fileName: string) => {
     try {
       console.log('Downloading file:', filePath);
+      
+      const cleanPath = getCleanFilePath(filePath);
+      console.log('Clean download path:', cleanPath);
       
       const fileExists = await checkFileExists(filePath);
       if (!fileExists) {
@@ -124,7 +139,7 @@ const UCFileManager = () => {
 
       const { data, error } = await supabase.storage
         .from('uc-files')
-        .download(filePath);
+        .download(cleanPath);
 
       if (error) {
         console.error('Download error:', error);
@@ -149,7 +164,7 @@ const UCFileManager = () => {
       console.error('Download failed:', error);
       toast({
         title: "Download Failed",
-        description: "Unable to download file. Please try again.",
+        description: `Unable to download file: ${error.message}`,
         variant: "destructive",
       });
     }
@@ -159,6 +174,9 @@ const UCFileManager = () => {
     try {
       console.log('Previewing file:', filePath);
       
+      const cleanPath = getCleanFilePath(filePath);
+      console.log('Clean preview path:', cleanPath);
+      
       const fileExists = await checkFileExists(filePath);
       if (!fileExists) {
         toast({
@@ -171,24 +189,27 @@ const UCFileManager = () => {
 
       const { data, error } = await supabase.storage
         .from('uc-files')
-        .createSignedUrl(filePath, 300); // 5 minutes
+        .createSignedUrl(cleanPath, 300); // 5 minutes
 
       if (error) {
         console.error('Preview error:', error);
         throw error;
       }
 
-      window.open(data.signedUrl, '_blank');
-      
-      toast({
-        title: "Success",
-        description: "File opened for preview",
-      });
+      if (data?.signedUrl) {
+        window.open(data.signedUrl, '_blank');
+        toast({
+          title: "Success",
+          description: "File opened for preview",
+        });
+      } else {
+        throw new Error('No signed URL returned');
+      }
     } catch (error: any) {
       console.error('Preview failed:', error);
       toast({
         title: "Preview Failed",
-        description: "Unable to preview file. Please try again.",
+        description: `Unable to preview file: ${error.message}`,
         variant: "destructive",
       });
     }
@@ -198,6 +219,8 @@ const UCFileManager = () => {
     try {
       console.log('Printing file:', filePath);
       
+      const cleanPath = getCleanFilePath(filePath);
+      
       const fileExists = await checkFileExists(filePath);
       if (!fileExists) {
         toast({
@@ -210,29 +233,33 @@ const UCFileManager = () => {
 
       const { data, error } = await supabase.storage
         .from('uc-files')
-        .createSignedUrl(filePath, 300);
+        .createSignedUrl(cleanPath, 300);
 
       if (error) {
         console.error('Print error:', error);
         throw error;
       }
 
-      const printWindow = window.open(data.signedUrl, '_blank');
-      if (printWindow) {
-        printWindow.onload = () => {
-          printWindow.print();
-        };
+      if (data?.signedUrl) {
+        const printWindow = window.open(data.signedUrl, '_blank');
+        if (printWindow) {
+          printWindow.onload = () => {
+            printWindow.print();
+          };
+        }
+        
+        toast({
+          title: "Success",
+          description: "File sent to printer",
+        });
+      } else {
+        throw new Error('No signed URL returned');
       }
-      
-      toast({
-        title: "Success",
-        description: "File sent to printer",
-      });
     } catch (error: any) {
       console.error('Print failed:', error);
       toast({
         title: "Print Failed",
-        description: "Unable to print file. Please try again.",
+        description: `Unable to print file: ${error.message}`,
         variant: "destructive",
       });
     }
@@ -246,14 +273,18 @@ const UCFileManager = () => {
       
       // Try to delete the file from storage if it exists
       if (ucEntry?.uc_file_path) {
+        const cleanPath = getCleanFilePath(ucEntry.uc_file_path);
         const fileExists = await checkFileExists(ucEntry.uc_file_path);
+        
         if (fileExists) {
           const { error: storageError } = await supabase.storage
             .from('uc-files')
-            .remove([ucEntry.uc_file_path]);
+            .remove([cleanPath]);
           
           if (storageError) {
             console.error('Storage deletion error:', storageError);
+          } else {
+            console.log('File deleted from storage successfully');
           }
         }
       }
@@ -280,7 +311,7 @@ const UCFileManager = () => {
       console.error('Delete failed:', error);
       toast({
         title: "Delete Failed",
-        description: "Unable to delete UC file. Please try again.",
+        description: `Unable to delete UC file: ${error.message}`,
         variant: "destructive",
       });
     }
