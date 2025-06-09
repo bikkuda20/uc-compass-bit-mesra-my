@@ -28,7 +28,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { FileText, Search, Download, Trash2, Calendar, Eye, Edit, Printer } from "lucide-react";
+import { FileText, Search, Download, Trash2, Eye, Edit, Printer } from "lucide-react";
 
 const UCFileManager = () => {
   const [ucEntries, setUcEntries] = useState([]);
@@ -71,21 +71,39 @@ const UCFileManager = () => {
     }
   };
 
+  const checkFileExists = async (filePath: string) => {
+    try {
+      const { data, error } = await supabase.storage
+        .from('uc_files')
+        .list('', {
+          search: filePath
+        });
+      
+      return !error && data && data.length > 0;
+    } catch (error) {
+      return false;
+    }
+  };
+
   const deleteUCEntry = async (ucId: string) => {
     try {
-      // First, delete the actual UC file if it exists
       const ucEntry = ucEntries.find(entry => entry.id === ucId);
+      
+      // Try to delete the file from storage if it exists
       if (ucEntry?.uc_file_path) {
-        const { error: storageError } = await supabase.storage
-          .from('uc_files')
-          .remove([ucEntry.uc_file_path]);
-        
-        if (storageError) {
-          console.error('Error deleting file from storage:', storageError);
+        const fileExists = await checkFileExists(ucEntry.uc_file_path);
+        if (fileExists) {
+          const { error: storageError } = await supabase.storage
+            .from('uc_files')
+            .remove([ucEntry.uc_file_path]);
+          
+          if (storageError) {
+            console.error('Error deleting file from storage:', storageError);
+          }
         }
       }
 
-      // Then delete the database entry
+      // Delete the database entry
       const { error } = await supabase
         .from('uc_entries')
         .delete()
@@ -100,7 +118,6 @@ const UCFileManager = () => {
         description: "UC file deleted successfully",
       });
 
-      // Refresh the list
       fetchUploadedUCEntries();
     } catch (error: any) {
       console.error('Error deleting UC entry:', error);
@@ -110,6 +127,140 @@ const UCFileManager = () => {
         variant: "destructive",
       });
     }
+  };
+
+  const downloadFile = async (filePath: string, fileName: string) => {
+    try {
+      // Check if file exists first
+      const fileExists = await checkFileExists(filePath);
+      if (!fileExists) {
+        toast({
+          title: "File Not Found",
+          description: "The requested file does not exist in storage",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      const { data, error } = await supabase.storage
+        .from('uc_files')
+        .download(filePath);
+
+      if (error) {
+        throw error;
+      }
+
+      const url = window.URL.createObjectURL(data);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = fileName || 'download';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(url);
+
+      toast({
+        title: "Success",
+        description: "UC file downloaded successfully",
+      });
+    } catch (error: any) {
+      console.error('Error downloading file:', error);
+      toast({
+        title: "Error",
+        description: "Failed to download UC file. File may not exist.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const previewFile = async (filePath: string) => {
+    try {
+      // Check if file exists first
+      const fileExists = await checkFileExists(filePath);
+      if (!fileExists) {
+        toast({
+          title: "File Not Found",
+          description: "The requested file does not exist in storage",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      const { data, error } = await supabase.storage
+        .from('uc_files')
+        .createSignedUrl(filePath, 60);
+
+      if (error) {
+        throw error;
+      }
+
+      window.open(data.signedUrl, '_blank');
+    } catch (error: any) {
+      console.error('Error previewing file:', error);
+      toast({
+        title: "Error",
+        description: "Failed to preview UC file. File may not exist.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const printFile = async (filePath: string) => {
+    try {
+      // Check if file exists first
+      const fileExists = await checkFileExists(filePath);
+      if (!fileExists) {
+        toast({
+          title: "File Not Found",
+          description: "The requested file does not exist in storage",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      const { data, error } = await supabase.storage
+        .from('uc_files')
+        .createSignedUrl(filePath, 60);
+
+      if (error) {
+        throw error;
+      }
+
+      const printWindow = window.open(data.signedUrl, '_blank');
+      if (printWindow) {
+        printWindow.onload = () => {
+          printWindow.print();
+        };
+      }
+    } catch (error: any) {
+      console.error('Error printing file:', error);
+      toast({
+        title: "Error",
+        description: "Failed to print UC file. File may not exist.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const editUCEntry = (ucId: string) => {
+    navigate(`/uc-upload?edit=${ucId}`);
+  };
+
+  const getStatusBadge = (status: string) => {
+    const statusColors = {
+      pending: "bg-yellow-100 text-yellow-800",
+      approved: "bg-green-100 text-green-800",
+      rejected: "bg-red-100 text-red-800",
+      default: "bg-gray-100 text-gray-800"
+    };
+
+    const colorClass = statusColors[status?.toLowerCase()] || statusColors.default;
+
+    return (
+      <Badge variant="secondary" className={colorClass}>
+        {status?.toUpperCase() || 'PENDING'}
+      </Badge>
+    );
   };
 
   useEffect(() => {
@@ -131,114 +282,6 @@ const UCFileManager = () => {
     }
   }, [searchTerm, ucEntries]);
 
-  const downloadFile = async (filePath: string, fileName: string) => {
-    try {
-      const { data, error } = await supabase.storage
-        .from('uc_files')
-        .download(filePath);
-
-      if (error) {
-        throw error;
-      }
-
-      const url = window.URL.createObjectURL(data);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = fileName;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      window.URL.revokeObjectURL(url);
-
-      toast({
-        title: "Success",
-        description: "UC file downloaded successfully",
-      });
-    } catch (error: any) {
-      console.error('Error downloading file:', error);
-      toast({
-        title: "Error",
-        description: "Failed to download UC file",
-        variant: "destructive",
-      });
-    }
-  };
-
-  const previewFile = async (filePath: string) => {
-    try {
-      const { data, error } = await supabase.storage
-        .from('uc_files')
-        .createSignedUrl(filePath, 60); // 60 seconds expiry
-
-      if (error) {
-        throw error;
-      }
-
-      window.open(data.signedUrl, '_blank');
-    } catch (error: any) {
-      console.error('Error previewing file:', error);
-      toast({
-        title: "Error",
-        description: "Failed to preview UC file",
-        variant: "destructive",
-      });
-    }
-  };
-
-  const printFile = async (filePath: string) => {
-    try {
-      const { data, error } = await supabase.storage
-        .from('uc_files')
-        .createSignedUrl(filePath, 60);
-
-      if (error) {
-        throw error;
-      }
-
-      const printWindow = window.open(data.signedUrl, '_blank');
-      if (printWindow) {
-        printWindow.onload = () => {
-          printWindow.print();
-        };
-      }
-    } catch (error: any) {
-      console.error('Error printing file:', error);
-      toast({
-        title: "Error",
-        description: "Failed to print UC file",
-        variant: "destructive",
-      });
-    }
-  };
-
-  const editUCEntry = (ucId: string) => {
-    navigate(`/uc-upload?edit=${ucId}`);
-  };
-
-  const getStatusBadge = (status: string) => {
-    let badgeColor = "neutral";
-    switch (status) {
-      case "pending":
-        badgeColor = "yellow";
-        break;
-      case "approved":
-        badgeColor = "green";
-        break;
-      case "rejected":
-        badgeColor = "red";
-        break;
-      default:
-        badgeColor = "neutral";
-        break;
-    }
-
-    return (
-      <Badge variant="secondary" className={`bg-${badgeColor}-500 text-white`}>
-        {status.toUpperCase()}
-      </Badge>
-    );
-  };
-
   return (
     <SidebarProvider>
       <div className="min-h-screen flex w-full bg-gradient-to-br from-blue-50 via-white to-green-50">
@@ -247,19 +290,24 @@ const UCFileManager = () => {
           <div className="flex-1 ml-64 p-8">
             <Card>
               <CardHeader>
-                <CardTitle className="text-2xl font-bold">UC File Manager</CardTitle>
+                <CardTitle className="text-2xl font-bold flex items-center">
+                  <FileText className="h-6 w-6 mr-2 text-blue-600" />
+                  UC File Manager
+                </CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="grid gap-4">
                   <div className="flex items-center space-x-2">
+                    <Search className="h-5 w-5 text-gray-500" />
                     <Input
                       type="text"
                       placeholder="Search by project code, PI, agency, scheme, or year..."
                       value={searchTerm}
                       onChange={(e) => setSearchTerm(e.target.value)}
+                      className="flex-1"
                     />
-                    <Search className="h-5 w-5 text-gray-500" />
                   </div>
+                  
                   <div className="overflow-x-auto">
                     <Table>
                       <TableHeader>
@@ -270,19 +318,20 @@ const UCFileManager = () => {
                           <TableHead>Scheme</TableHead>
                           <TableHead>Financial Year</TableHead>
                           <TableHead>Status</TableHead>
+                          <TableHead>Upload Date</TableHead>
                           <TableHead className="text-right">Actions</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
                         {loading ? (
                           <TableRow>
-                            <TableCell colSpan={7} className="text-center">
+                            <TableCell colSpan={8} className="text-center py-8">
                               Loading UC entries...
                             </TableCell>
                           </TableRow>
                         ) : filteredEntries.length === 0 ? (
                           <TableRow>
-                            <TableCell colSpan={7} className="text-center">
+                            <TableCell colSpan={8} className="text-center py-8">
                               No UC files found.
                             </TableCell>
                           </TableRow>
@@ -290,62 +339,69 @@ const UCFileManager = () => {
                           filteredEntries.map((entry: any) => (
                             <TableRow key={entry.id}>
                               <TableCell className="font-medium">{entry.project_code}</TableCell>
-                              <TableCell>{entry.principal_investigator?.name}</TableCell>
-                              <TableCell>{entry.funding_agency?.name}</TableCell>
-                              <TableCell>{entry.scheme?.name}</TableCell>
-                              <TableCell className="text-center">{entry.financial_year?.year}</TableCell>
+                              <TableCell>{entry.principal_investigator?.name || 'N/A'}</TableCell>
+                              <TableCell>{entry.funding_agency?.name || 'N/A'}</TableCell>
+                              <TableCell>{entry.scheme?.name || entry.scheme_name || 'N/A'}</TableCell>
+                              <TableCell className="text-center">{entry.financial_year?.year || 'N/A'}</TableCell>
                               <TableCell>{getStatusBadge(entry.status)}</TableCell>
+                              <TableCell>
+                                {entry.created_at ? new Date(entry.created_at).toLocaleDateString() : 'N/A'}
+                              </TableCell>
                               <TableCell className="text-right">
-                                <div className="flex justify-end gap-2">
+                                <div className="flex justify-end gap-1">
                                   <Button
                                     variant="ghost"
                                     size="sm"
                                     onClick={() => previewFile(entry.uc_file_path)}
+                                    disabled={!entry.uc_file_path}
                                   >
-                                    <Eye className="h-4 w-4 mr-2" />
-                                    Preview
+                                    <Eye className="h-4 w-4" />
                                   </Button>
                                   <Button
                                     variant="ghost"
                                     size="sm"
                                     onClick={() => downloadFile(entry.uc_file_path, entry.uc_file_name)}
+                                    disabled={!entry.uc_file_path}
                                   >
-                                    <Download className="h-4 w-4 mr-2" />
-                                    Download
+                                    <Download className="h-4 w-4" />
                                   </Button>
                                   <Button
                                     variant="ghost"
                                     size="sm"
                                     onClick={() => editUCEntry(entry.id)}
                                   >
-                                    <Edit className="h-4 w-4 mr-2" />
-                                    Edit
+                                    <Edit className="h-4 w-4" />
                                   </Button>
                                   <Button
                                     variant="ghost"
                                     size="sm"
                                     onClick={() => printFile(entry.uc_file_path)}
+                                    disabled={!entry.uc_file_path}
                                   >
-                                    <Printer className="h-4 w-4 mr-2" />
-                                    Print
+                                    <Printer className="h-4 w-4" />
                                   </Button>
                                   <AlertDialog>
                                     <AlertDialogTrigger asChild>
-                                      <Button variant="ghost" size="sm" className="text-red-500">
-                                        <Trash2 className="h-4 w-4 mr-2" />
-                                        Delete
+                                      <Button variant="ghost" size="sm" className="text-red-500 hover:text-red-700">
+                                        <Trash2 className="h-4 w-4" />
                                       </Button>
                                     </AlertDialogTrigger>
                                     <AlertDialogContent>
                                       <AlertDialogHeader>
                                         <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
                                         <AlertDialogDescription>
-                                          This action cannot be undone. This will permanently delete the UC file from our servers.
+                                          This action cannot be undone. This will permanently delete the UC file 
+                                          "{entry.project_code}" and remove it from our servers.
                                         </AlertDialogDescription>
                                       </AlertDialogHeader>
                                       <AlertDialogFooter>
                                         <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                        <AlertDialogAction onClick={() => deleteUCEntry(entry.id)}>Delete</AlertDialogAction>
+                                        <AlertDialogAction 
+                                          onClick={() => deleteUCEntry(entry.id)}
+                                          className="bg-red-600 hover:bg-red-700"
+                                        >
+                                          Delete
+                                        </AlertDialogAction>
                                       </AlertDialogFooter>
                                     </AlertDialogContent>
                                   </AlertDialog>
