@@ -5,26 +5,16 @@ import { supabase } from "@/integrations/supabase/client";
 export const useFileOperations = () => {
   const { toast } = useToast();
 
-  const getCleanFilePath = (filePath: string) => {
-    // The files are actually stored as uc-files/uc-files/filename.pdf
-    // But the database stores them as uc-files/filename.pdf
-    let cleanPath = filePath;
-    
+  const getStoragePath = (filePath: string) => {
     console.log('Input file path:', filePath);
     
-    // If the path doesn't start with uc-files/, add it
-    if (!cleanPath.startsWith('uc-files/')) {
-      cleanPath = `uc-files/${cleanPath}`;
+    // Remove any leading 'uc-files/' prefix if it exists
+    let cleanPath = filePath;
+    if (cleanPath.startsWith('uc-files/')) {
+      cleanPath = cleanPath.replace('uc-files/', '');
     }
     
-    // Since files are actually stored with doubled path, we need uc-files/uc-files/filename
-    // But if it already has the doubled path, don't add another prefix
-    if (!cleanPath.startsWith('uc-files/uc-files/')) {
-      // Replace the first uc-files/ with uc-files/uc-files/
-      cleanPath = cleanPath.replace('uc-files/', 'uc-files/uc-files/');
-    }
-    
-    console.log('Final storage path:', cleanPath);
+    console.log('Final storage path (without bucket prefix):', cleanPath);
     return cleanPath;
   };
 
@@ -32,31 +22,27 @@ export const useFileOperations = () => {
     try {
       console.log('Checking file existence for path:', filePath);
       
-      const cleanPath = getCleanFilePath(filePath);
-      console.log('Checking for clean path:', cleanPath);
+      const storagePath = getStoragePath(filePath);
+      console.log('Checking for storage path:', storagePath);
       
-      // Try to get the file info directly instead of listing all files
+      // List all files in the bucket to see what's actually there
       const { data, error } = await supabase.storage
         .from('uc-files')
-        .list('uc-files', {
-          limit: 100
+        .list('', {
+          limit: 1000
         });
       
-      console.log('Files in uc-files folder:', data);
+      console.log('All files in bucket:', data);
       
       if (error) {
         console.error('Error listing files:', error);
         return false;
       }
       
-      // Extract just the filename from the clean path
-      const fileName = cleanPath.replace('uc-files/uc-files/', '');
-      console.log('Looking for filename:', fileName);
-      
       // Check if the file exists in the list
       const fileExists = data && data.some(file => {
-        console.log('Comparing file:', file.name, 'with:', fileName);
-        return file.name === fileName;
+        console.log('Comparing file:', file.name, 'with:', storagePath);
+        return file.name === storagePath;
       });
       
       console.log('File exists check result:', fileExists);
@@ -71,22 +57,12 @@ export const useFileOperations = () => {
     try {
       console.log('Downloading file with path:', filePath);
       
-      const cleanPath = getCleanFilePath(filePath);
-      console.log('Clean download path:', cleanPath);
+      const storagePath = getStoragePath(filePath);
+      console.log('Storage download path:', storagePath);
       
-      const fileExists = await checkFileExists(filePath);
-      if (!fileExists) {
-        toast({
-          title: "File Not Found",
-          description: `The file "${fileName}" does not exist in storage. Please check if the file was uploaded correctly.`,
-          variant: "destructive",
-        });
-        return;
-      }
-
       const { data, error } = await supabase.storage
         .from('uc-files')
-        .download(cleanPath);
+        .download(storagePath);
 
       if (error) {
         console.error('Download error:', error);
@@ -121,22 +97,12 @@ export const useFileOperations = () => {
     try {
       console.log('Previewing file with path:', filePath);
       
-      const cleanPath = getCleanFilePath(filePath);
-      console.log('Clean preview path:', cleanPath);
+      const storagePath = getStoragePath(filePath);
+      console.log('Storage preview path:', storagePath);
       
-      const fileExists = await checkFileExists(filePath);
-      if (!fileExists) {
-        toast({
-          title: "File Not Found",
-          description: `The file does not exist in storage. Please check if the file was uploaded correctly.`,
-          variant: "destructive",
-        });
-        return;
-      }
-
       const { data, error } = await supabase.storage
         .from('uc-files')
-        .createSignedUrl(cleanPath, 300);
+        .createSignedUrl(storagePath, 300);
 
       if (error) {
         console.error('Preview error:', error);
@@ -166,22 +132,12 @@ export const useFileOperations = () => {
     try {
       console.log('Printing file with path:', filePath);
       
-      const cleanPath = getCleanFilePath(filePath);
-      console.log('Clean print path:', cleanPath);
+      const storagePath = getStoragePath(filePath);
+      console.log('Storage print path:', storagePath);
       
-      const fileExists = await checkFileExists(filePath);
-      if (!fileExists) {
-        toast({
-          title: "File Not Found",
-          description: `The file does not exist in storage. Please check if the file was uploaded correctly.`,
-          variant: "destructive",
-      });
-        return;
-      }
-
       const { data, error } = await supabase.storage
         .from('uc-files')
-        .createSignedUrl(cleanPath, 300);
+        .createSignedUrl(storagePath, 300);
 
       if (error) {
         console.error('Print error:', error);
