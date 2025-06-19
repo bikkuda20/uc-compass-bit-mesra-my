@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -429,79 +428,6 @@ const UCUpload = () => {
             isRequired={false}
           />
         </div>
-
-        {/* UC Workflow Tracking */}
-        <Card>
-          <CardHeader>
-            <CardTitle>UC Workflow Tracking</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4">
-              <div>
-                <Label htmlFor="ucReceivedDate">1. UC Received Date by PI</Label>
-                <Input
-                  id="ucReceivedDate"
-                  type="date"
-                  onChange={(e) => handleInputChange("ucReceivedDate", e.target.value)}
-                />
-              </div>
-
-              <div>
-                <Label htmlFor="ucVerifiedDate">2. UC Verified by Related Person</Label>
-                <Input
-                  id="ucVerifiedDate"
-                  type="date"
-                  onChange={(e) => handleInputChange("ucVerifiedDate", e.target.value)}
-                />
-              </div>
-
-              <div>
-                <Label htmlFor="ucCheckedArFinanceDate">3. UC Checked by AR Finance</Label>
-                <Input
-                  id="ucCheckedArFinanceDate"
-                  type="date"
-                  onChange={(e) => handleInputChange("ucCheckedArFinanceDate", e.target.value)}
-                />
-              </div>
-
-              <div>
-                <Label htmlFor="ucSentDeputyComptrollerDate">4. UC Sent to Deputy Comptroller</Label>
-                <Input
-                  id="ucSentDeputyComptrollerDate"
-                  type="date"
-                  onChange={(e) => handleInputChange("ucSentDeputyComptrollerDate", e.target.value)}
-                />
-              </div>
-
-              <div>
-                <Label htmlFor="ucSentRegistrarDate">5. UC Sent to Registrar Office</Label>
-                <Input
-                  id="ucSentRegistrarDate"
-                  type="date"
-                  onChange={(e) => handleInputChange("ucSentRegistrarDate", e.target.value)}
-                />
-              </div>
-
-              <div>
-                <Label htmlFor="ucReturnedRegistrarDate">6. UC Returned from Registrar</Label>
-                <Input
-                  id="ucReturnedRegistrarDate"
-                  type="date"
-                  onChange={(e) => handleInputChange("ucReturnedRegistrarDate", e.target.value)}
-                />
-              </div>
-
-              <div>
-                <Label htmlFor="ucHandedOverPiDate">7. UC Handed Over to PI</Label>
-                <Input
-                  id="ucHandedOverPiDate"
-                  type="date"
-                  onChange={(e) => handleInputChange("ucHandedOverPiDate", e.target.value)}
-                />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
 
         {/* Submit Button */}
         <div className="flex justify-end">
