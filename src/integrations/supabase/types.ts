@@ -138,6 +138,7 @@ export type Database = {
           scheme_name: string | null
           status: string
           uc_checked_ar_finance_date: string | null
+          uc_entry_no: string | null
           uc_file_name: string
           uc_file_path: string
           uc_handed_over_pi_date: string | null
@@ -167,6 +168,7 @@ export type Database = {
           scheme_name?: string | null
           status?: string
           uc_checked_ar_finance_date?: string | null
+          uc_entry_no?: string | null
           uc_file_name: string
           uc_file_path: string
           uc_handed_over_pi_date?: string | null
@@ -196,6 +198,7 @@ export type Database = {
           scheme_name?: string | null
           status?: string
           uc_checked_ar_finance_date?: string | null
+          uc_entry_no?: string | null
           uc_file_name?: string
           uc_file_path?: string
           uc_handed_over_pi_date?: string | null

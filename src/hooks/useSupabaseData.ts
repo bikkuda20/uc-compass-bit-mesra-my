@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -82,7 +83,7 @@ export const useUCEntries = () => {
       // Transform the data with proper null checks
       const transformedData: UCEntry[] = (data || []).map(item => ({
         id: item.id,
-        uc_entry_no: item.uc_entry_no,
+        uc_entry_no: item.uc_entry_no || undefined,
         funding_agency: item.funding_agency || { id: '', name: 'Unknown Agency' },
         financial_year: item.financial_year || { id: '', year: 'Unknown Year' },
         principal_investigator: item.principal_investigator || { id: '', name: 'Unknown PI' },
