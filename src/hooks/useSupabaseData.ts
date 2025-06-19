@@ -4,6 +4,7 @@ import { useToast } from "@/hooks/use-toast";
 
 export interface UCEntry {
   id: string;
+  uc_entry_no?: string; // New field for UC Entry Number
   funding_agency: {
     id: string;
     name: string;
@@ -81,6 +82,7 @@ export const useUCEntries = () => {
       // Transform the data with proper null checks
       const transformedData: UCEntry[] = (data || []).map(item => ({
         id: item.id,
+        uc_entry_no: item.uc_entry_no,
         funding_agency: item.funding_agency || { id: '', name: 'Unknown Agency' },
         financial_year: item.financial_year || { id: '', year: 'Unknown Year' },
         principal_investigator: item.principal_investigator || { id: '', name: 'Unknown PI' },
@@ -123,11 +125,47 @@ export const useUCEntries = () => {
     }
   };
 
+  const deleteUCEntry = async (ucId: string) => {
+    try {
+      const { error } = await supabase
+        .from('uc_entries')
+        .delete()
+        .eq('id', ucId);
+
+      if (error) {
+        console.error('Error deleting UC entry:', error);
+        toast({
+          title: "Delete Failed",
+          description: `Failed to delete UC entry: ${error.message}`,
+          variant: "destructive",
+        });
+        return false;
+      }
+
+      toast({
+        title: "Success",
+        description: "UC entry deleted successfully",
+      });
+      
+      // Refresh the list
+      await fetchUCEntries();
+      return true;
+    } catch (error: any) {
+      console.error('Unexpected error during delete:', error);
+      toast({
+        title: "Error",
+        description: `An unexpected error occurred: ${error.message}`,
+        variant: "destructive",
+      });
+      return false;
+    }
+  };
+
   useEffect(() => {
     fetchUCEntries();
   }, []);
 
-  return { ucs, loading, refetch: fetchUCEntries };
+  return { ucs, loading, refetch: fetchUCEntries, deleteUCEntry };
 };
 
 export const useFundingAgencies = () => {

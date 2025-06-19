@@ -1,11 +1,23 @@
+
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Search, Edit, Filter, Loader2, Plus, ArrowLeft, Eye, FileText } from "lucide-react";
+import { Search, Edit, Filter, Loader2, Plus, ArrowLeft, Eye, FileText, Trash2 } from "lucide-react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { useUCEntries, useFundingAgencies, useFinancialYears } from "@/hooks/useSupabaseData";
 import { useNavigate } from "react-router-dom";
 import UCForm from "./UCForm";
@@ -13,7 +25,7 @@ import UCProgressTracker from "./UCProgressTracker";
 import UCDetailsModal from "./UCDetailsModal";
 
 const UCList = () => {
-  const { ucs, loading: ucsLoading, refetch } = useUCEntries();
+  const { ucs, loading: ucsLoading, refetch, deleteUCEntry } = useUCEntries();
   const { agencies } = useFundingAgencies();
   const { years } = useFinancialYears();
   const navigate = useNavigate();
@@ -38,7 +50,8 @@ const UCList = () => {
       filtered = filtered.filter(
         (uc) =>
           uc.principal_investigator.name.toLowerCase().includes(filters.search.toLowerCase()) ||
-          uc.project_code.toLowerCase().includes(filters.search.toLowerCase())
+          uc.project_code.toLowerCase().includes(filters.search.toLowerCase()) ||
+          (uc.uc_entry_no && uc.uc_entry_no.toLowerCase().includes(filters.search.toLowerCase()))
       );
     }
 
@@ -112,6 +125,13 @@ const UCList = () => {
   const handleViewDetails = (uc: any) => {
     setSelectedUc(uc);
     setShowDetailsModal(true);
+  };
+
+  const handleDeleteUc = async (ucId: string) => {
+    const success = await deleteUCEntry(ucId);
+    if (success) {
+      // Entry will be automatically removed from the list by the refetch in deleteUCEntry
+    }
   };
 
   if (ucsLoading) {
@@ -188,7 +208,7 @@ const UCList = () => {
             <div className="relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 w-4 h-4" />
               <Input
-                placeholder="Search by PI Name or Project Code"
+                placeholder="Search by PI Name, Project Code, or UC Entry No"
                 value={filters.search}
                 onChange={(e) => setFilters({ ...filters, search: e.target.value })}
                 className="pl-10 border-blue-200 focus:border-blue-500 focus:ring-blue-500"
@@ -269,6 +289,7 @@ const UCList = () => {
             <Table>
               <TableHeader>
                 <TableRow className="bg-gradient-to-r from-slate-50 to-slate-100">
+                  <TableHead className="font-semibold text-slate-700">UC Entry No</TableHead>
                   <TableHead className="font-semibold text-slate-700">Funding Agency</TableHead>
                   <TableHead className="font-semibold text-slate-700">Financial Year</TableHead>
                   <TableHead className="font-semibold text-slate-700">PI Name</TableHead>
@@ -281,6 +302,7 @@ const UCList = () => {
               <TableBody>
                 {filteredUcs.map((uc) => (
                   <TableRow key={uc.id} className="hover:bg-blue-50/50 transition-colors duration-200">
+                    <TableCell className="font-medium break-words max-w-24">{uc.uc_entry_no || 'N/A'}</TableCell>
                     <TableCell className="font-medium break-words max-w-32">{uc.funding_agency.name}</TableCell>
                     <TableCell className="break-words">{uc.financial_year.year}</TableCell>
                     <TableCell className="break-words max-w-32">{uc.principal_investigator.name}</TableCell>
@@ -317,6 +339,35 @@ const UCList = () => {
                         >
                           <Edit className="w-3 h-3" />
                         </Button>
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="hover:bg-red-100 hover:text-red-700 transition-colors duration-200"
+                            >
+                              <Trash2 className="w-3 h-3" />
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>Delete UC Entry</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                Are you sure you want to delete this UC entry for "{uc.project_code}"? 
+                                This action cannot be undone and will permanently remove the entry from the system.
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>Cancel</AlertDialogCancel>
+                              <AlertDialogAction 
+                                onClick={() => handleDeleteUc(uc.id)}
+                                className="bg-red-600 hover:bg-red-700"
+                              >
+                                Delete
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
                       </div>
                     </TableCell>
                   </TableRow>
