@@ -8,13 +8,18 @@ export const useFileOperations = () => {
   const getStoragePath = (filePath: string) => {
     console.log('Input file path:', filePath);
     
-    // Remove any leading 'uc-files/' prefix if it exists
+    // Remove any leading 'uc-files/' prefix if it exists since bucket name is separate
     let cleanPath = filePath;
     if (cleanPath.startsWith('uc-files/')) {
       cleanPath = cleanPath.replace('uc-files/', '');
     }
     
-    console.log('Final storage path (without bucket prefix):', cleanPath);
+    // Remove any additional uc-files prefix that might be doubled
+    if (cleanPath.startsWith('uc-files/')) {
+      cleanPath = cleanPath.replace('uc-files/', '');
+    }
+    
+    console.log('Clean storage path:', cleanPath);
     return cleanPath;
   };
 
@@ -23,29 +28,31 @@ export const useFileOperations = () => {
       console.log('Checking file existence for path:', filePath);
       
       const storagePath = getStoragePath(filePath);
-      console.log('Checking for storage path:', storagePath);
+      console.log('Checking storage path:', storagePath);
       
-      // List all files in the bucket to see what's actually there
+      // Try to get the file info directly
       const { data, error } = await supabase.storage
         .from('uc-files')
         .list('', {
-          limit: 1000
+          limit: 1000,
+          search: storagePath
         });
       
-      console.log('All files in bucket:', data);
-      
       if (error) {
-        console.error('Error listing files:', error);
+        console.error('Error checking file:', error);
         return false;
       }
       
-      // Check if the file exists in the list
+      console.log('Search results:', data);
+      
+      // Check if the file exists in the results
       const fileExists = data && data.some(file => {
-        console.log('Comparing file:', file.name, 'with:', storagePath);
-        return file.name === storagePath;
+        const fullPath = file.name;
+        console.log('Comparing:', fullPath, 'with:', storagePath);
+        return fullPath === storagePath || fullPath.endsWith(storagePath);
       });
       
-      console.log('File exists check result:', fileExists);
+      console.log('File exists:', fileExists);
       return fileExists;
     } catch (error) {
       console.error('Error checking file existence:', error);
@@ -66,7 +73,21 @@ export const useFileOperations = () => {
 
       if (error) {
         console.error('Download error:', error);
-        throw error;
+        toast({
+          title: "Download Failed",
+          description: `File not found: ${error.message}`,
+          variant: "destructive",
+        });
+        return;
+      }
+
+      if (!data) {
+        toast({
+          title: "Download Failed",
+          description: "No file data received",
+          variant: "destructive",
+        });
+        return;
       }
 
       // Create download link
@@ -102,11 +123,16 @@ export const useFileOperations = () => {
       
       const { data, error } = await supabase.storage
         .from('uc-files')
-        .createSignedUrl(storagePath, 300);
+        .createSignedUrl(storagePath, 3600); // 1 hour expiry
 
       if (error) {
         console.error('Preview error:', error);
-        throw error;
+        toast({
+          title: "Preview Failed",
+          description: `Unable to preview file: ${error.message}`,
+          variant: "destructive",
+        });
+        return;
       }
 
       if (data?.signedUrl) {
@@ -116,7 +142,11 @@ export const useFileOperations = () => {
           description: "File opened for preview",
         });
       } else {
-        throw new Error('No signed URL returned');
+        toast({
+          title: "Preview Failed",
+          description: "Unable to generate preview URL",
+          variant: "destructive",
+        });
       }
     } catch (error: any) {
       console.error('Preview failed:', error);
@@ -137,11 +167,16 @@ export const useFileOperations = () => {
       
       const { data, error } = await supabase.storage
         .from('uc-files')
-        .createSignedUrl(storagePath, 300);
+        .createSignedUrl(storagePath, 3600); // 1 hour expiry
 
       if (error) {
         console.error('Print error:', error);
-        throw error;
+        toast({
+          title: "Print Failed",
+          description: `Unable to print file: ${error.message}`,
+          variant: "destructive",
+        });
+        return;
       }
 
       if (data?.signedUrl) {
@@ -157,7 +192,11 @@ export const useFileOperations = () => {
           description: "File sent to printer",
         });
       } else {
-        throw new Error('No signed URL returned');
+        toast({
+          title: "Print Failed",
+          description: "Unable to generate print URL",
+          variant: "destructive",
+        });
       }
     } catch (error: any) {
       console.error('Print failed:', error);

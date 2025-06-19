@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -65,37 +64,38 @@ export const useUCEntries = () => {
           principal_investigator:principal_investigators(id, name, email, department),
           scheme:schemes(id, name, description)
         `)
-        .not('uc_received_date', 'is', null) // Only show UCs that have been received from PI (tracking enabled)
+        .not('uc_received_date', 'is', null)
         .order('created_at', { ascending: false });
 
       if (error) {
         console.error('Error fetching UC entries:', error);
         toast({
-          title: "Error",
-          description: "Failed to fetch UC entries",
+          title: "Database Error",
+          description: `Failed to fetch UC entries: ${error.message}`,
           variant: "destructive",
         });
+        setUcs([]);
         return;
       }
 
-      // Transform the data to match our UCEntry interface with proper type assertion
+      // Transform the data with proper null checks
       const transformedData: UCEntry[] = (data || []).map(item => ({
         id: item.id,
-        funding_agency: item.funding_agency,
-        financial_year: item.financial_year,
-        principal_investigator: item.principal_investigator,
+        funding_agency: item.funding_agency || { id: '', name: 'Unknown Agency' },
+        financial_year: item.financial_year || { id: '', year: 'Unknown Year' },
+        principal_investigator: item.principal_investigator || { id: '', name: 'Unknown PI' },
         scheme: item.scheme,
-        project_code: item.project_code,
+        project_code: item.project_code || '',
         project_type: item.project_type || 'Project',
-        uc_file_name: item.uc_file_name,
-        uc_file_path: item.uc_file_path,
-        sanction_letter_file_name: item.sanction_letter_file_name,
-        sanction_letter_file_path: item.sanction_letter_file_path,
+        uc_file_name: item.uc_file_name || '',
+        uc_file_path: item.uc_file_path || '',
+        sanction_letter_file_name: item.sanction_letter_file_name || '',
+        sanction_letter_file_path: item.sanction_letter_file_path || '',
         date_received: item.date_received,
         date_given: item.date_given,
         status: item.status as 'Pending' | 'Submitted' | 'Verified',
         
-        // New workflow fields
+        // Workflow fields
         uc_received_date: item.uc_received_date,
         uc_verified_date: item.uc_verified_date,
         uc_checked_ar_finance_date: item.uc_checked_ar_finance_date,
@@ -110,13 +110,14 @@ export const useUCEntries = () => {
       }));
 
       setUcs(transformedData);
-    } catch (error) {
-      console.error('Error:', error);
+    } catch (error: any) {
+      console.error('Unexpected error:', error);
       toast({
         title: "Error",
-        description: "An unexpected error occurred",
+        description: `An unexpected error occurred: ${error.message}`,
         variant: "destructive",
       });
+      setUcs([]);
     } finally {
       setLoading(false);
     }
