@@ -14,50 +14,8 @@ export const useFileOperations = () => {
       cleanPath = cleanPath.replace('uc-files/', '');
     }
     
-    // Remove any additional uc-files prefix that might be doubled
-    if (cleanPath.startsWith('uc-files/')) {
-      cleanPath = cleanPath.replace('uc-files/', '');
-    }
-    
     console.log('Clean storage path:', cleanPath);
     return cleanPath;
-  };
-
-  const checkFileExists = async (filePath: string) => {
-    try {
-      console.log('Checking file existence for path:', filePath);
-      
-      const storagePath = getStoragePath(filePath);
-      console.log('Checking storage path:', storagePath);
-      
-      // Try to get the file info directly
-      const { data, error } = await supabase.storage
-        .from('uc-files')
-        .list('', {
-          limit: 1000,
-          search: storagePath
-        });
-      
-      if (error) {
-        console.error('Error checking file:', error);
-        return false;
-      }
-      
-      console.log('Search results:', data);
-      
-      // Check if the file exists in the results
-      const fileExists = data && data.some(file => {
-        const fullPath = file.name;
-        console.log('Comparing:', fullPath, 'with:', storagePath);
-        return fullPath === storagePath || fullPath.endsWith(storagePath);
-      });
-      
-      console.log('File exists:', fileExists);
-      return fileExists;
-    } catch (error) {
-      console.error('Error checking file existence:', error);
-      return false;
-    }
   };
 
   const downloadFile = async (filePath: string, fileName: string) => {
@@ -212,6 +170,5 @@ export const useFileOperations = () => {
     downloadFile,
     previewFile,
     printFile,
-    checkFileExists,
   };
 };

@@ -7,7 +7,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { RefreshCw } from "lucide-react";
+import { RefreshCw, CheckCircle, AlertCircle } from "lucide-react";
 import { StatusBadge } from "./StatusBadge";
 import { FileActions } from "./FileActions";
 
@@ -45,13 +45,14 @@ export const UCTable = ({
             <TableHead className="text-white font-bold text-sm shadow-lg">Financial Year</TableHead>
             <TableHead className="text-white font-bold text-sm shadow-lg">Status</TableHead>
             <TableHead className="text-white font-bold text-sm shadow-lg">Upload Date</TableHead>
+            <TableHead className="text-white font-bold text-sm shadow-lg">File Status</TableHead>
             <TableHead className="text-right text-white font-bold text-sm shadow-lg">Actions</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
           {loading ? (
             <TableRow>
-              <TableCell colSpan={9} className="text-center py-12">
+              <TableCell colSpan={10} className="text-center py-12">
                 <div className="flex items-center justify-center">
                   <div className="relative">
                     <RefreshCw className="h-8 w-8 animate-spin text-blue-600 mr-3" />
@@ -65,7 +66,7 @@ export const UCTable = ({
             </TableRow>
           ) : entries.length === 0 ? (
             <TableRow>
-              <TableCell colSpan={9} className="text-center py-12">
+              <TableCell colSpan={10} className="text-center py-12">
                 <div className="space-y-3">
                   <div className="text-2xl text-gray-400">📁</div>
                   <p className="text-lg font-medium text-gray-500">
@@ -108,6 +109,25 @@ export const UCTable = ({
                 </TableCell>
                 <TableCell className="text-gray-600">
                   {entry.created_at ? new Date(entry.created_at).toLocaleDateString() : 'N/A'}
+                </TableCell>
+                <TableCell>
+                  <div className="flex items-center justify-center">
+                    {entry.uc_file_path && entry.uc_file_name ? (
+                      <div className="flex items-center space-x-1">
+                        <CheckCircle className="h-5 w-5 text-green-500" />
+                        <span className="text-xs text-green-600 font-medium bg-green-50 px-2 py-1 rounded-full border border-green-200">
+                          Uploaded
+                        </span>
+                      </div>
+                    ) : (
+                      <div className="flex items-center space-x-1">
+                        <AlertCircle className="h-5 w-5 text-red-500" />
+                        <span className="text-xs text-red-600 font-medium bg-red-50 px-2 py-1 rounded-full border border-red-200">
+                          Missing
+                        </span>
+                      </div>
+                    )}
+                  </div>
                 </TableCell>
                 <TableCell className="text-right">
                   <div className="transform hover:scale-105 transition-transform duration-200">
