@@ -26,12 +26,11 @@ const UCForm = ({ uc, onComplete, onCancel }: UCFormProps) => {
     financialYearId: "",
     piId: "",
     projectCode: "",
+    ucEntryNo: "",
     projectType: "Project",
-    dateReceived: "",
-    dateGiven: "",
     status: "Pending",
     
-    // New workflow tracking fields
+    // Workflow tracking fields
     ucReceivedDate: "",
     ucVerifiedDate: "",
     ucCheckedArFinanceDate: "",
@@ -51,9 +50,8 @@ const UCForm = ({ uc, onComplete, onCancel }: UCFormProps) => {
         financialYearId: uc.financial_year?.id || "",
         piId: uc.principal_investigator?.id || "",
         projectCode: uc.project_code || "",
+        ucEntryNo: uc.uc_entry_no || "",
         projectType: uc.project_type || "Project",
-        dateReceived: uc.date_received || "",
-        dateGiven: uc.date_given || "",
         status: uc.status || "Pending",
         
         // Workflow tracking fields
@@ -93,9 +91,8 @@ const UCForm = ({ uc, onComplete, onCancel }: UCFormProps) => {
         financial_year_id: formData.financialYearId,
         pi_id: formData.piId,
         project_code: formData.projectCode,
+        uc_entry_no: formData.ucEntryNo || null,
         project_type: formData.projectType,
-        date_received: formData.dateReceived || null,
-        date_given: formData.dateGiven || null,
         status: formData.status,
         uc_file_name: uc?.uc_file_name || "",
         uc_file_path: uc?.uc_file_path || "",
@@ -249,6 +246,16 @@ const UCForm = ({ uc, onComplete, onCancel }: UCFormProps) => {
               </div>
 
               <div>
+                <Label htmlFor="ucEntryNo">UC Entry No</Label>
+                <Input
+                  id="ucEntryNo"
+                  value={formData.ucEntryNo}
+                  onChange={(e) => handleInputChange("ucEntryNo", e.target.value)}
+                  placeholder="Enter UC entry number"
+                />
+              </div>
+
+              <div>
                 <Label htmlFor="projectType">Project Type</Label>
                 <Select 
                   value={formData.projectType} 
@@ -266,37 +273,9 @@ const UCForm = ({ uc, onComplete, onCancel }: UCFormProps) => {
                   </SelectContent>
                 </Select>
               </div>
-            </CardContent>
-          </Card>
-
-          {/* Legacy Tracking Information */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Legacy Information</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div>
-                <Label htmlFor="dateReceived">Date Received from PI (Legacy)</Label>
-                <Input
-                  id="dateReceived"
-                  type="date"
-                  value={formData.dateReceived}
-                  onChange={(e) => handleInputChange("dateReceived", e.target.value)}
-                />
-              </div>
 
               <div>
-                <Label htmlFor="dateGiven">Date Given to PI (Legacy)</Label>
-                <Input
-                  id="dateGiven"
-                  type="date"
-                  value={formData.dateGiven}
-                  onChange={(e) => handleInputChange("dateGiven", e.target.value)}
-                />
-              </div>
-
-              <div>
-                <Label htmlFor="status">Status (Legacy)</Label>
+                <Label htmlFor="status">Status</Label>
                 <Select 
                   value={formData.status} 
                   onValueChange={(value) => handleInputChange("status", value)}
@@ -315,15 +294,13 @@ const UCForm = ({ uc, onComplete, onCancel }: UCFormProps) => {
               </div>
             </CardContent>
           </Card>
-        </div>
 
-        {/* UC Workflow Tracking */}
-        <Card>
-          <CardHeader>
-            <CardTitle>UC Workflow Tracking</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4">
+          {/* UC Workflow Tracking */}
+          <Card>
+            <CardHeader>
+              <CardTitle>UC Workflow Tracking</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
               <div>
                 <Label htmlFor="ucReceivedDate">1. UC Received Date by PI</Label>
                 <Input
@@ -393,9 +370,9 @@ const UCForm = ({ uc, onComplete, onCancel }: UCFormProps) => {
                   onChange={(e) => handleInputChange("ucHandedOverPiDate", e.target.value)}
                 />
               </div>
-            </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
+        </div>
 
         {/* Submit Buttons */}
         <div className="flex justify-end space-x-4">
