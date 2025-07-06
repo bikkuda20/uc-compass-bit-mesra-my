@@ -37,16 +37,16 @@ export const UCTable = ({
       <Table>
         <TableHeader>
           <TableRow className="bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 hover:from-blue-700 hover:via-purple-700 hover:to-pink-700 transition-all duration-300">
-            <TableHead className="text-white font-bold text-sm shadow-lg">UC Entry No</TableHead>
-            <TableHead className="text-white font-bold text-sm shadow-lg">Project Code</TableHead>
-            <TableHead className="text-white font-bold text-sm shadow-lg">Principal Investigator</TableHead>
-            <TableHead className="text-white font-bold text-sm shadow-lg">Funding Agency</TableHead>
-            <TableHead className="text-white font-bold text-sm shadow-lg">Scheme</TableHead>
-            <TableHead className="text-white font-bold text-sm shadow-lg">Financial Year</TableHead>
-            <TableHead className="text-white font-bold text-sm shadow-lg">Status</TableHead>
-            <TableHead className="text-white font-bold text-sm shadow-lg">Upload Date</TableHead>
-            <TableHead className="text-white font-bold text-sm shadow-lg">File Status</TableHead>
-            <TableHead className="text-right text-white font-bold text-sm shadow-lg">Actions</TableHead>
+            <TableHead className="text-white font-bold text-sm shadow-lg w-32">UC Entry No</TableHead>
+            <TableHead className="text-white font-bold text-sm shadow-lg w-40">Project Code</TableHead>
+            <TableHead className="text-white font-bold text-sm shadow-lg w-48">Principal Investigator</TableHead>
+            <TableHead className="text-white font-bold text-sm shadow-lg w-40">Funding Agency</TableHead>
+            <TableHead className="text-white font-bold text-sm shadow-lg w-40">Scheme</TableHead>
+            <TableHead className="text-white font-bold text-sm shadow-lg w-32">Financial Year</TableHead>
+            <TableHead className="text-white font-bold text-sm shadow-lg w-32">Status</TableHead>
+            <TableHead className="text-white font-bold text-sm shadow-lg w-32">Upload Date</TableHead>
+            <TableHead className="text-white font-bold text-sm shadow-lg w-28">File Status</TableHead>
+            <TableHead className="text-white font-bold text-sm shadow-lg w-48 text-center">Actions</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -80,57 +80,57 @@ export const UCTable = ({
             entries.map((entry: any, index: number) => (
               <TableRow 
                 key={entry.id} 
-                className={`hover:bg-gradient-to-r hover:from-blue-50/80 hover:via-purple-50/50 hover:to-pink-50/30 transition-all duration-300 hover:shadow-lg hover:scale-[1.01] ${
+                className={`hover:bg-gradient-to-r hover:from-blue-50/80 hover:via-purple-50/50 hover:to-pink-50/30 transition-all duration-300 hover:shadow-lg ${
                   index % 2 === 0 ? 'bg-white/70' : 'bg-gradient-to-r from-blue-50/30 to-purple-50/20'
                 }`}
               >
-                <TableCell className="font-medium text-blue-700 bg-gradient-to-r from-blue-100/50 to-purple-100/30 rounded-lg mx-1 my-1 shadow-sm">
-                  <div className="px-2 py-1 rounded-md bg-gradient-to-r from-blue-500/10 to-purple-500/10 border border-blue-200/50">
+                <TableCell className="font-medium text-blue-700 w-32">
+                  <div className="px-2 py-1 rounded-md bg-gradient-to-r from-blue-500/10 to-purple-500/10 border border-blue-200/50 text-xs">
                     {entry.uc_entry_no || 'N/A'}
                   </div>
                 </TableCell>
-                <TableCell className="font-bold text-gray-800">
-                  <div className="px-2 py-1 rounded-md bg-gradient-to-r from-emerald-500/10 to-teal-500/10 border border-emerald-200/50">
+                <TableCell className="font-bold text-gray-800 w-40">
+                  <div className="px-2 py-1 rounded-md bg-gradient-to-r from-emerald-500/10 to-teal-500/10 border border-emerald-200/50 text-xs font-mono">
                     {entry.project_code}
                   </div>
                 </TableCell>
-                <TableCell className="text-gray-700">{entry.principal_investigator?.name || 'N/A'}</TableCell>
-                <TableCell className="text-gray-700">{entry.funding_agency?.name || 'N/A'}</TableCell>
-                <TableCell className="text-gray-700">{entry.scheme?.name || entry.scheme_name || 'N/A'}</TableCell>
-                <TableCell className="text-center">
-                  <div className="px-2 py-1 rounded-full bg-gradient-to-r from-orange-500/10 to-amber-500/10 border border-orange-200/50 text-orange-700 font-medium">
+                <TableCell className="text-gray-700 w-48 text-sm">{entry.principal_investigator?.name || 'N/A'}</TableCell>
+                <TableCell className="text-gray-700 w-40 text-sm">{entry.funding_agency?.name || 'N/A'}</TableCell>
+                <TableCell className="text-gray-700 w-40 text-sm">{entry.scheme?.name || entry.scheme_name || 'N/A'}</TableCell>
+                <TableCell className="text-center w-32">
+                  <div className="px-2 py-1 rounded-full bg-gradient-to-r from-orange-500/10 to-amber-500/10 border border-orange-200/50 text-orange-700 font-medium text-xs">
                     {entry.financial_year?.year || 'N/A'}
                   </div>
                 </TableCell>
-                <TableCell>
+                <TableCell className="w-32">
                   <div className="transform hover:scale-105 transition-transform duration-200">
                     <StatusBadge status={entry.status} />
                   </div>
                 </TableCell>
-                <TableCell className="text-gray-600">
+                <TableCell className="text-gray-600 w-32 text-sm">
                   {entry.created_at ? new Date(entry.created_at).toLocaleDateString() : 'N/A'}
                 </TableCell>
-                <TableCell>
+                <TableCell className="w-28">
                   <div className="flex items-center justify-center">
                     {entry.uc_file_path && entry.uc_file_name ? (
                       <div className="flex items-center space-x-1">
-                        <CheckCircle className="h-5 w-5 text-green-500" />
-                        <span className="text-xs text-green-600 font-medium bg-green-50 px-2 py-1 rounded-full border border-green-200">
-                          Uploaded
+                        <CheckCircle className="h-4 w-4 text-green-500" />
+                        <span className="text-xs text-green-600 font-medium bg-green-50 px-1 py-0.5 rounded border border-green-200">
+                          ✓
                         </span>
                       </div>
                     ) : (
                       <div className="flex items-center space-x-1">
-                        <AlertCircle className="h-5 w-5 text-red-500" />
-                        <span className="text-xs text-red-600 font-medium bg-red-50 px-2 py-1 rounded-full border border-red-200">
-                          Missing
+                        <AlertCircle className="h-4 w-4 text-red-500" />
+                        <span className="text-xs text-red-600 font-medium bg-red-50 px-1 py-0.5 rounded border border-red-200">
+                          ✗
                         </span>
                       </div>
                     )}
                   </div>
                 </TableCell>
-                <TableCell className="text-right">
-                  <div className="transform hover:scale-105 transition-transform duration-200">
+                <TableCell className="w-48">
+                  <div className="flex justify-center">
                     <FileActions
                       entry={entry}
                       onPreview={onPreview}
