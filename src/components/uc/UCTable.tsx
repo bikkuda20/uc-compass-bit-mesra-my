@@ -37,16 +37,16 @@ export const UCTable = ({
       <Table>
         <TableHeader>
           <TableRow className="bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 hover:from-blue-700 hover:via-purple-700 hover:to-pink-700 transition-all duration-300">
-            <TableHead className="text-white font-bold text-sm shadow-lg w-32">UC Entry No</TableHead>
-            <TableHead className="text-white font-bold text-sm shadow-lg w-40">Project Code</TableHead>
-            <TableHead className="text-white font-bold text-sm shadow-lg w-48">Principal Investigator</TableHead>
-            <TableHead className="text-white font-bold text-sm shadow-lg w-40">Funding Agency</TableHead>
-            <TableHead className="text-white font-bold text-sm shadow-lg w-40">Scheme</TableHead>
-            <TableHead className="text-white font-bold text-sm shadow-lg w-32">Financial Year</TableHead>
-            <TableHead className="text-white font-bold text-sm shadow-lg w-32">Status</TableHead>
-            <TableHead className="text-white font-bold text-sm shadow-lg w-32">Upload Date</TableHead>
-            <TableHead className="text-white font-bold text-sm shadow-lg w-28">File Status</TableHead>
-            <TableHead className="text-white font-bold text-sm shadow-lg w-48 text-center">Actions</TableHead>
+            <TableHead className="text-white font-bold text-sm shadow-lg w-24">UC Entry No</TableHead>
+            <TableHead className="text-white font-bold text-sm shadow-lg w-28">Project Code</TableHead>
+            <TableHead className="text-white font-bold text-sm shadow-lg w-36">Principal Investigator</TableHead>
+            <TableHead className="text-white font-bold text-sm shadow-lg w-32">Funding Agency</TableHead>
+            <TableHead className="text-white font-bold text-sm shadow-lg w-24">Scheme</TableHead>
+            <TableHead className="text-white font-bold text-sm shadow-lg w-24">Financial Year</TableHead>
+            <TableHead className="text-white font-bold text-sm shadow-lg w-24">Status</TableHead>
+            <TableHead className="text-white font-bold text-sm shadow-lg w-24">Upload Date</TableHead>
+            <TableHead className="text-white font-bold text-sm shadow-lg w-20">File Status</TableHead>
+            <TableHead className="text-white font-bold text-sm shadow-lg w-60 text-center">Actions</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -84,33 +84,33 @@ export const UCTable = ({
                   index % 2 === 0 ? 'bg-white/70' : 'bg-gradient-to-r from-blue-50/30 to-purple-50/20'
                 }`}
               >
-                <TableCell className="font-medium text-blue-700 w-32">
+                <TableCell className="font-medium text-blue-700 w-24 p-2">
                   <div className="px-2 py-1 rounded-md bg-gradient-to-r from-blue-500/10 to-purple-500/10 border border-blue-200/50 text-xs">
                     {entry.uc_entry_no || 'N/A'}
                   </div>
                 </TableCell>
-                <TableCell className="font-bold text-gray-800 w-40">
+                <TableCell className="font-bold text-gray-800 w-28 p-2">
                   <div className="px-2 py-1 rounded-md bg-gradient-to-r from-emerald-500/10 to-teal-500/10 border border-emerald-200/50 text-xs font-mono">
                     {entry.project_code}
                   </div>
                 </TableCell>
-                <TableCell className="text-gray-700 w-48 text-sm">{entry.principal_investigator?.name || 'N/A'}</TableCell>
-                <TableCell className="text-gray-700 w-40 text-sm">{entry.funding_agency?.name || 'N/A'}</TableCell>
-                <TableCell className="text-gray-700 w-40 text-sm">{entry.scheme?.name || entry.scheme_name || 'N/A'}</TableCell>
-                <TableCell className="text-center w-32">
+                <TableCell className="text-gray-700 w-36 text-xs p-2">{entry.principal_investigator?.name || 'N/A'}</TableCell>
+                <TableCell className="text-gray-700 w-32 text-xs p-2">{entry.funding_agency?.name || 'N/A'}</TableCell>
+                <TableCell className="text-gray-700 w-24 text-xs p-2">{entry.scheme?.name || entry.scheme_name || 'N/A'}</TableCell>
+                <TableCell className="text-center w-24 p-2">
                   <div className="px-2 py-1 rounded-full bg-gradient-to-r from-orange-500/10 to-amber-500/10 border border-orange-200/50 text-orange-700 font-medium text-xs">
                     {entry.financial_year?.year || 'N/A'}
                   </div>
                 </TableCell>
-                <TableCell className="w-32">
+                <TableCell className="w-24 p-2">
                   <div className="transform hover:scale-105 transition-transform duration-200">
                     <StatusBadge status={entry.status} />
                   </div>
                 </TableCell>
-                <TableCell className="text-gray-600 w-32 text-sm">
+                <TableCell className="text-gray-600 w-24 text-xs p-2">
                   {entry.created_at ? new Date(entry.created_at).toLocaleDateString() : 'N/A'}
                 </TableCell>
-                <TableCell className="w-28">
+                <TableCell className="w-20 p-2">
                   <div className="flex items-center justify-center">
                     {entry.uc_file_path && entry.uc_file_name ? (
                       <div className="flex items-center space-x-1">
@@ -129,17 +129,15 @@ export const UCTable = ({
                     )}
                   </div>
                 </TableCell>
-                <TableCell className="w-48">
-                  <div className="flex justify-center">
-                    <FileActions
-                      entry={entry}
-                      onPreview={onPreview}
-                      onDownload={onDownload}
-                      onEdit={onEdit}
-                      onPrint={onPrint}
-                      onDelete={onDelete}
-                    />
-                  </div>
+                <TableCell className="w-60 p-4">
+                  <FileActions
+                    entry={entry}
+                    onPreview={onPreview}
+                    onDownload={onDownload}
+                    onEdit={onEdit}
+                    onPrint={onPrint}
+                    onDelete={onDelete}
+                  />
                 </TableCell>
               </TableRow>
             ))
