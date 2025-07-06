@@ -7,7 +7,7 @@ import { FileActions } from "./FileActions";
 
 interface UCCardProps {
   entry: any;
-  onPreview: (filePath: string) => void;
+  onPreview: (filePath: string, fileName: string) => void;
   onDownload: (filePath: string, fileName: string) => void;
   onEdit: (ucId: string) => void;
   onPrint: (filePath: string) => void;

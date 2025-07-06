@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -9,7 +10,7 @@ import { Button } from "@/components/ui/button";
 import { FileText, RefreshCw, Sparkles, Grid, List } from "lucide-react";
 import { SearchBar } from "@/components/uc/SearchBar";
 import { UCCard } from "@/components/uc/UCCard";
-import { useFileOperations } from "@/hooks/useFileOperations";
+import { PreviewModal } from "@/components/uc/PreviewModal";
 
 const UCFileManager = () => {
   const [ucEntries, setUcEntries] = useState([]);
@@ -17,9 +18,17 @@ const UCFileManager = () => {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
+  const [previewModal, setPreviewModal] = useState<{
+    isOpen: boolean;
+    filePath: string;
+    fileName: string;
+  }>({
+    isOpen: false,
+    filePath: '',
+    fileName: ''
+  });
   const { toast } = useToast();
   const navigate = useNavigate();
-  const { downloadFile, previewFile, printFile } = useFileOperations();
 
   const fetchUploadedUCEntries = async () => {
     try {
@@ -63,6 +72,147 @@ const UCFileManager = () => {
     }
   };
 
+  const downloadFile = async (filePath: string, fileName: string) => {
+    try {
+      console.log('Downloading file:', filePath, fileName);
+      
+      if (!filePath) {
+        toast({
+          title: "Download Failed",
+          description: "No file path provided",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Try different path variations to find the file
+      const pathsToTry = [
+        filePath,
+        filePath.replace('uc-files/', ''),
+        `uc-files/${filePath}`,
+        `uc-files/${filePath.replace('uc-files/', '')}`
+      ];
+      
+      let downloadResponse = null;
+      
+      for (const path of pathsToTry) {
+        console.log('Trying download path:', path);
+        const response = await supabase.storage
+          .from('uc-files')
+          .download(path);
+        
+        if (response.data && !response.error) {
+          downloadResponse = response;
+          console.log('Download success with path:', path);
+          break;
+        }
+      }
+
+      if (!downloadResponse?.data) {
+        toast({
+          title: "Download Failed",
+          description: "File not found in storage",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Create download link
+      const url = window.URL.createObjectURL(downloadResponse.data);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = fileName || 'uc-file.pdf';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(url);
+
+      toast({
+        title: "Success",
+        description: "File downloaded successfully",
+      });
+    } catch (error: any) {
+      console.error('Download failed:', error);
+      toast({
+        title: "Download Failed",
+        description: `Unable to download file: ${error.message}`,
+        variant: "destructive",
+      });
+    }
+  };
+
+  const previewFile = (filePath: string, fileName: string) => {
+    console.log('Opening preview for:', filePath, fileName);
+    setPreviewModal({
+      isOpen: true,
+      filePath,
+      fileName
+    });
+  };
+
+  const printFile = async (filePath: string) => {
+    try {
+      console.log('Printing file:', filePath);
+      
+      if (!filePath) {
+        toast({
+          title: "Print Failed",
+          description: "No file path provided",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Try different path variations to find the file
+      const pathsToTry = [
+        filePath,
+        filePath.replace('uc-files/', ''),
+        `uc-files/${filePath}`,
+        `uc-files/${filePath.replace('uc-files/', '')}`
+      ];
+      
+      let signedUrl = null;
+      
+      for (const path of pathsToTry) {
+        const { data, error } = await supabase.storage
+          .from('uc-files')
+          .createSignedUrl(path, 3600);
+        
+        if (data?.signedUrl && !error) {
+          signedUrl = data.signedUrl;
+          break;
+        }
+      }
+
+      if (signedUrl) {
+        const printWindow = window.open(signedUrl, '_blank');
+        if (printWindow) {
+          printWindow.onload = () => {
+            printWindow.print();
+          };
+        }
+        
+        toast({
+          title: "Success",
+          description: "File sent to printer",
+        });
+      } else {
+        toast({
+          title: "Print Failed",
+          description: "File not found in storage",
+          variant: "destructive",
+        });
+      }
+    } catch (error: any) {
+      console.error('Print failed:', error);
+      toast({
+        title: "Print Failed",
+        description: `Unable to print file: ${error.message}`,
+        variant: "destructive",
+      });
+    }
+  };
+
   const deleteUCEntry = async (ucId: string) => {
     try {
       console.log('Deleting UC entry:', ucId);
@@ -70,18 +220,23 @@ const UCFileManager = () => {
       const ucEntry = ucEntries.find(entry => entry.id === ucId);
       
       if (ucEntry?.uc_file_path) {
-        const cleanPath = ucEntry.uc_file_path.startsWith('uc-files/') 
-          ? ucEntry.uc_file_path.replace('uc-files/', '') 
-          : ucEntry.uc_file_path;
+        const pathsToTry = [
+          ucEntry.uc_file_path,
+          ucEntry.uc_file_path.replace('uc-files/', ''),
+          `uc-files/${ucEntry.uc_file_path}`,
+          `uc-files/${ucEntry.uc_file_path.replace('uc-files/', '')}`
+        ];
         
-        const { error: storageError } = await supabase.storage
-          .from('uc-files')
-          .remove([cleanPath]);
-        
-        if (storageError) {
-          console.error('Storage deletion error:', storageError);
-        } else {
-          console.log('File deleted from storage successfully');
+        // Try to delete from storage
+        for (const path of pathsToTry) {
+          const { error } = await supabase.storage
+            .from('uc-files')
+            .remove([path]);
+          
+          if (!error) {
+            console.log('File deleted from storage with path:', path);
+            break;
+          }
         }
       }
 
@@ -249,6 +404,13 @@ const UCFileManager = () => {
             </div>
           </div>
         </SidebarInset>
+        
+        <PreviewModal
+          isOpen={previewModal.isOpen}
+          onClose={() => setPreviewModal({ isOpen: false, filePath: '', fileName: '' })}
+          filePath={previewModal.filePath}
+          fileName={previewModal.fileName}
+        />
       </div>
     </SidebarProvider>
   );
