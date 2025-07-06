@@ -103,18 +103,29 @@ export const useFileOperations = () => {
         return;
       }
       
-      const { data, error } = await supabase.storage
+      // Try downloading with the original path first, then with cleaned path
+      let downloadResponse = await supabase.storage
         .from('uc-files')
-        .download(storagePath);
+        .download(filePath);
 
-      console.log('Download response data:', data);
-      console.log('Download response error:', error);
+      console.log('First download attempt with original path:', downloadResponse);
+
+      // If first attempt fails, try with cleaned path
+      if (downloadResponse.error) {
+        console.log('First attempt failed, trying with cleaned path:', storagePath);
+        downloadResponse = await supabase.storage
+          .from('uc-files')
+          .download(storagePath);
+        console.log('Second download attempt with cleaned path:', downloadResponse);
+      }
+
+      const { data, error } = downloadResponse;
 
       if (error) {
         console.error('Download error details:', error);
         toast({
           title: "Download Failed",
-          description: `Error: ${error.message}. Path: ${storagePath}`,
+          description: `Error: ${error.message}. Tried paths: ${filePath} and ${storagePath}`,
           variant: "destructive",
         });
         return;
@@ -185,27 +196,29 @@ export const useFileOperations = () => {
       const storagePath = getStoragePath(filePath);
       console.log('Storage preview path:', storagePath);
       
-      if (!storagePath) {
-        toast({
-          title: "Preview Failed",
-          description: "Invalid file path",
-          variant: "destructive",
-        });
-        return;
-      }
-      
-      const { data, error } = await supabase.storage
+      // Try creating signed URL with original path first, then with cleaned path
+      let signedUrlResponse = await supabase.storage
         .from('uc-files')
-        .createSignedUrl(storagePath, 3600); // 1 hour expiry
+        .createSignedUrl(filePath, 3600);
 
-      console.log('Signed URL response data:', data);
-      console.log('Signed URL response error:', error);
+      console.log('First signed URL attempt with original path:', signedUrlResponse);
+
+      // If first attempt fails, try with cleaned path
+      if (signedUrlResponse.error) {
+        console.log('First attempt failed, trying with cleaned path:', storagePath);
+        signedUrlResponse = await supabase.storage
+          .from('uc-files')
+          .createSignedUrl(storagePath, 3600);
+        console.log('Second signed URL attempt with cleaned path:', signedUrlResponse);
+      }
+
+      const { data, error } = signedUrlResponse;
 
       if (error) {
         console.error('Preview error details:', error);
         toast({
           title: "Preview Failed",
-          description: `Error: ${error.message}. Path: ${storagePath}`,
+          description: `Error: ${error.message}. Tried paths: ${filePath} and ${storagePath}`,
           variant: "destructive",
         });
         return;
@@ -251,14 +264,20 @@ export const useFileOperations = () => {
         return;
       }
 
-      const storagePath = getStoragePath(filePath);
-      console.log('Storage print path:', storagePath);
-      
-      const { data, error } = await supabase.storage
+      // Try creating signed URL with original path first, then with cleaned path
+      let signedUrlResponse = await supabase.storage
         .from('uc-files')
-        .createSignedUrl(storagePath, 3600); // 1 hour expiry
+        .createSignedUrl(filePath, 3600);
 
-      console.log('Print signed URL response:', data, error);
+      // If first attempt fails, try with cleaned path
+      if (signedUrlResponse.error) {
+        const storagePath = getStoragePath(filePath);
+        signedUrlResponse = await supabase.storage
+          .from('uc-files')
+          .createSignedUrl(storagePath, 3600);
+      }
+
+      const { data, error } = signedUrlResponse;
 
       if (error) {
         console.error('Print error:', error);
