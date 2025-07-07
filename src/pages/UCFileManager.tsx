@@ -1,528 +1,224 @@
 
-import { useState, useEffect } from "react";
-import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "@/hooks/use-toast";
-import { useNavigate } from "react-router-dom";
-import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar";
-import { Sidebar } from "@/components/Sidebar";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useState } from 'react';
 import { Button } from "@/components/ui/button";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { FileText, RefreshCw, Sparkles, Grid, List, Filter } from "lucide-react";
-import { SearchBar } from "@/components/uc/SearchBar";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { ArrowLeft, Search, FileText, Filter } from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useNavigate } from "react-router-dom";
+import { useUCEntries, useFinancialYears } from "@/hooks/useSupabaseData";
 import { UCCard } from "@/components/uc/UCCard";
+import { UCEditForm } from "@/components/uc/UCEditForm";
 import { PreviewModal } from "@/components/uc/PreviewModal";
-import UCEditForm from "@/components/uc/UCEditForm";
-import { useFinancialYears } from "@/hooks/useSupabaseData";
+import { useFileOperations } from "@/hooks/useFileOperations";
+import { useToast } from "@/hooks/use-toast";
 
 const UCFileManager = () => {
-  const [ucEntries, setUcEntries] = useState([]);
-  const [filteredEntries, setFilteredEntries] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
-  const [editingUCId, setEditingUCId] = useState<string | null>(null);
-  const [selectedFinancialYear, setSelectedFinancialYear] = useState<string>("");
-  const [projectCodeFilter, setProjectCodeFilter] = useState<string>("");
-  const [previewModal, setPreviewModal] = useState<{
-    isOpen: boolean;
-    filePath: string;
-    fileName: string;
-  }>({
-    isOpen: false,
-    filePath: '',
-    fileName: ''
-  });
-  const { toast } = useToast();
   const navigate = useNavigate();
   const { years } = useFinancialYears();
+  const { ucs, loading, refetch, deleteUCEntry } = useUCEntries();
+  const { downloadFile, previewFile } = useFileOperations();
+  const { toast } = useToast();
 
-  const fetchUploadedUCEntries = async () => {
-    try {
-      setLoading(true);
-      console.log('Fetching UC entries...');
-      
-      let query = supabase
-        .from('uc_entries')
-        .select(`
-          *,
-          funding_agency:funding_agencies(id, name),
-          financial_year:financial_years(id, year),
-          principal_investigator:principal_investigators(id, name, email, department),
-          scheme:schemes(id, name, description)
-        `)
-        .is('uc_received_date', null)
-        .order('created_at', { ascending: false });
+  const [searchTerm, setSearchTerm] = useState('');
+  const [selectedYear, setSelectedYear] = useState('');
+  const [editingUC, setEditingUC] = useState<any>(null);
+  const [previewFile, setPreviewFile] = useState<{filePath: string, fileName: string} | null>(null);
 
-      // Apply financial year filter
-      if (selectedFinancialYear) {
-        query = query.eq('financial_year_id', selectedFinancialYear);
-      }
+  // Filter UCs based on financial year and project code search
+  const filteredUCs = ucs.filter(uc => {
+    const matchesYear = !selectedYear || uc.financial_year?.id === selectedYear;
+    const matchesSearch = !searchTerm || 
+      uc.project_code.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      uc.project_title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      uc.principal_investigator?.name.toLowerCase().includes(searchTerm.toLowerCase());
+    
+    return matchesYear && matchesSearch;
+  });
 
-      const { data, error } = await query;
-
-      if (error) {
-        console.error('Database error:', error);
-        throw error;
-      }
-
-      console.log('Fetched UC entries:', data);
-      let filteredData = data || [];
-
-      // Apply project code filter
-      if (projectCodeFilter.trim()) {
-        filteredData = filteredData.filter((entry: any) =>
-          entry.project_code?.toLowerCase().includes(projectCodeFilter.toLowerCase())
-        );
-      }
-
-      setUcEntries(filteredData);
-      setFilteredEntries(filteredData);
-      
-      toast({
-        title: "Success",
-        description: `Loaded ${filteredData.length} UC files`,
-      });
-    } catch (error: any) {
-      console.error('Error fetching UC entries:', error);
-      toast({
-        title: "Error",
-        description: "Failed to fetch UC files",
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
-    }
+  const handlePreview = (filePath: string, fileName: string) => {
+    setPreviewFile({ filePath, fileName });
   };
 
-  const downloadFile = async (filePath: string, fileName: string) => {
+  const handleDownload = async (filePath: string, fileName: string) => {
     try {
-      console.log('Downloading file:', filePath, fileName);
-      
-      if (!filePath) {
-        toast({
-          title: "Download Failed",
-          description: "No file path provided",
-          variant: "destructive",
-        });
-        return;
-      }
-
-      // Try different path variations to find the file
-      const pathsToTry = [
-        filePath,
-        filePath.replace('uc-files/', ''),
-        `uc-files/${filePath}`,
-        `uc-files/${filePath.replace('uc-files/', '')}`
-      ];
-      
-      let downloadResponse = null;
-      
-      for (const path of pathsToTry) {
-        console.log('Trying download path:', path);
-        const response = await supabase.storage
-          .from('uc-files')
-          .download(path);
-        
-        if (response.data && !response.error) {
-          downloadResponse = response;
-          console.log('Download success with path:', path);
-          break;
-        }
-      }
-
-      if (!downloadResponse?.data) {
-        toast({
-          title: "Download Failed",
-          description: "File not found in storage",
-          variant: "destructive",
-        });
-        return;
-      }
-
-      // Create download link
-      const url = window.URL.createObjectURL(downloadResponse.data);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = fileName || 'uc-file.pdf';
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      window.URL.revokeObjectURL(url);
-
-      toast({
-        title: "Success",
-        description: "File downloaded successfully",
-      });
-    } catch (error: any) {
+      await downloadFile(filePath, fileName);
+    } catch (error) {
       console.error('Download failed:', error);
       toast({
         title: "Download Failed",
-        description: `Unable to download file: ${error.message}`,
+        description: "Failed to download the file. Please try again.",
         variant: "destructive",
       });
     }
   };
 
-  const previewFile = (filePath: string, fileName: string) => {
-    console.log('Opening preview for:', filePath, fileName);
-    setPreviewModal({
-      isOpen: true,
-      filePath,
-      fileName
+  const handleEdit = (uc: any) => {
+    setEditingUC(uc);
+  };
+
+  const handlePrint = (filePath: string) => {
+    console.log('Print functionality not implemented yet for:', filePath);
+    toast({
+      title: "Print",
+      description: "Print functionality will be implemented soon.",
     });
   };
 
-  const printFile = async (filePath: string) => {
-    try {
-      console.log('Printing file:', filePath);
-      
-      if (!filePath) {
-        toast({
-          title: "Print Failed",
-          description: "No file path provided",
-          variant: "destructive",
-        });
-        return;
-      }
-
-      // Try different path variations to find the file
-      const pathsToTry = [
-        filePath,
-        filePath.replace('uc-files/', ''),
-        `uc-files/${filePath}`,
-        `uc-files/${filePath.replace('uc-files/', '')}`
-      ];
-      
-      let signedUrl = null;
-      
-      for (const path of pathsToTry) {
-        const { data, error } = await supabase.storage
-          .from('uc-files')
-          .createSignedUrl(path, 3600);
-        
-        if (data?.signedUrl && !error) {
-          signedUrl = data.signedUrl;
-          break;
-        }
-      }
-
-      if (signedUrl) {
-        const printWindow = window.open(signedUrl, '_blank');
-        if (printWindow) {
-          printWindow.onload = () => {
-            printWindow.print();
-          };
-        }
-        
-        toast({
-          title: "Success",
-          description: "File sent to printer",
-        });
-      } else {
-        toast({
-          title: "Print Failed",
-          description: "File not found in storage",
-          variant: "destructive",
-        });
-      }
-    } catch (error: any) {
-      console.error('Print failed:', error);
-      toast({
-        title: "Print Failed",
-        description: `Unable to print file: ${error.message}`,
-        variant: "destructive",
-      });
-    }
-  };
-
-  const deleteUCEntry = async (ucId: string) => {
-    try {
-      console.log('Deleting UC entry:', ucId);
-      
-      const ucEntry = ucEntries.find(entry => entry.id === ucId);
-      
-      if (ucEntry?.uc_file_path) {
-        const pathsToTry = [
-          ucEntry.uc_file_path,
-          ucEntry.uc_file_path.replace('uc-files/', ''),
-          `uc-files/${ucEntry.uc_file_path}`,
-          `uc-files/${ucEntry.uc_file_path.replace('uc-files/', '')}`
-        ];
-        
-        // Try to delete from storage
-        for (const path of pathsToTry) {
-          const { error } = await supabase.storage
-            .from('uc-files')
-            .remove([path]);
-          
-          if (!error) {
-            console.log('File deleted from storage with path:', path);
-            break;
-          }
-        }
-      }
-
-      const { error } = await supabase
-        .from('uc_entries')
-        .delete()
-        .eq('id', ucId);
-
-      if (error) {
-        console.error('Database deletion error:', error);
-        throw error;
-      }
-
+  const handleDelete = async (ucId: string) => {
+    const success = await deleteUCEntry(ucId);
+    if (success) {
       toast({
         title: "Success",
-        description: "UC file deleted successfully",
-      });
-
-      fetchUploadedUCEntries();
-    } catch (error: any) {
-      console.error('Delete failed:', error);
-      toast({
-        title: "Delete Failed",
-        description: `Unable to delete UC file: ${error.message}`,
-        variant: "destructive",
+        description: "UC entry deleted successfully",
       });
     }
-  };
-
-  const editUCEntry = (ucId: string) => {
-    setEditingUCId(ucId);
   };
 
   const handleEditComplete = () => {
-    setEditingUCId(null);
-    fetchUploadedUCEntries();
+    setEditingUC(null);
+    refetch();
   };
 
-  const handleEditCancel = () => {
-    setEditingUCId(null);
-  };
-
-  useEffect(() => {
-    if (searchTerm.trim()) {
-      const filtered = ucEntries.filter((entry: any) =>
-        entry.project_code?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        entry.project_title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        entry.principal_investigator?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        entry.funding_agency?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        entry.scheme?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        entry.financial_year?.year?.toString().includes(searchTerm) ||
-        entry.uc_entry_no?.toLowerCase().includes(searchTerm.toLowerCase())
-      );
-      setFilteredEntries(filtered);
-    } else {
-      setFilteredEntries(ucEntries);
-    }
-  }, [searchTerm, ucEntries]);
-
-  useEffect(() => {
-    fetchUploadedUCEntries();
-  }, [selectedFinancialYear, projectCodeFilter]);
-
-  // If editing, show the edit form
-  if (editingUCId) {
+  if (editingUC) {
     return (
-      <SidebarProvider>
-        <div className="min-h-screen flex w-full bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100">
-          <Sidebar />
-          <SidebarInset>
-            <div className="flex-1 ml-64 p-6">
-              <UCEditForm
-                ucId={editingUCId}
-                onComplete={handleEditComplete}
-                onCancel={handleEditCancel}
-              />
-            </div>
-          </SidebarInset>
-        </div>
-      </SidebarProvider>
+      <div className="p-6 space-y-6 bg-gradient-to-br from-blue-50 to-purple-100 min-h-screen">
+        <UCEditForm
+          uc={editingUC}
+          onComplete={handleEditComplete}
+          onCancel={() => setEditingUC(null)}
+        />
+      </div>
     );
   }
 
   return (
-    <SidebarProvider>
-      <div className="min-h-screen flex w-full bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 relative overflow-hidden">
-        {/* Animated background elements */}
-        <div className="absolute inset-0 overflow-hidden pointer-events-none">
-          <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-gradient-to-r from-blue-400/10 to-purple-400/10 rounded-full blur-3xl animate-pulse"></div>
-          <div className="absolute bottom-1/4 right-1/4 w-80 h-80 bg-gradient-to-r from-indigo-400/10 to-pink-400/10 rounded-full blur-3xl animate-pulse delay-1000"></div>
+    <div className="p-6 space-y-6 bg-gradient-to-br from-blue-50 to-purple-100 min-h-screen">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center space-x-4">
+          <Button variant="ghost" onClick={() => navigate('/')}>
+            <ArrowLeft className="w-4 h-4 mr-2" />
+            Back to Dashboard
+          </Button>
+          <h2 className="text-2xl font-bold text-slate-800">UC File Manager</h2>
         </div>
-        
-        <Sidebar />
-        <SidebarInset>
-          <div className="flex-1 ml-64 p-6 relative z-10">
-            <Card className="shadow-2xl border-0 bg-white/90 backdrop-blur-xl rounded-3xl overflow-hidden mb-6">
-              <CardHeader className="bg-gradient-to-r from-slate-700 via-blue-700 to-indigo-700 text-white relative">
-                <div className="absolute inset-0 bg-gradient-to-r from-slate-700/95 via-blue-700/95 to-indigo-700/95 backdrop-blur-sm"></div>
-                <CardTitle className="text-3xl font-bold flex items-center justify-between relative z-10">
-                  <div className="flex items-center space-x-3">
-                    <div className="relative">
-                      <FileText className="h-8 w-8 text-white drop-shadow-lg" />
-                      <Sparkles className="h-4 w-4 text-yellow-300 absolute -top-1 -right-1 animate-pulse" />
-                    </div>
-                    <span className="bg-gradient-to-r from-white to-blue-100 bg-clip-text text-transparent drop-shadow-lg">
-                      UC File Manager
-                    </span>
-                  </div>
-                  <div className="flex items-center space-x-3">
-                    <div className="flex items-center space-x-1 bg-white/20 rounded-lg p-1">
-                      <Button
-                        variant={viewMode === 'grid' ? 'default' : 'ghost'}
-                        size="sm"
-                        onClick={() => setViewMode('grid')}
-                        className="h-8 w-8 p-0"
-                      >
-                        <Grid className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        variant={viewMode === 'list' ? 'default' : 'ghost'}
-                        size="sm"
-                        onClick={() => setViewMode('list')}
-                        className="h-8 w-8 p-0"
-                      >
-                        <List className="h-4 w-4" />
-                      </Button>
-                    </div>
-                    <Button 
-                      onClick={fetchUploadedUCEntries}
-                      variant="outline"
-                      size="sm"
-                      disabled={loading}
-                      className="bg-white/20 border-white/30 text-white hover:bg-white/30 hover:border-white/50 backdrop-blur-sm transition-all duration-300 shadow-lg hover:shadow-xl"
-                    >
-                      <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
-                      Refresh
-                    </Button>
-                  </div>
-                </CardTitle>
-              </CardHeader>
-            </Card>
+      </div>
 
-            <div className="space-y-6">
-              {/* Filters */}
-              <Card className="shadow-lg border-0 bg-white/90 backdrop-blur-sm rounded-2xl">
-                <CardHeader>
-                  <CardTitle className="flex items-center space-x-2">
-                    <Filter className="h-5 w-5" />
-                    <span>Filters</span>
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div>
-                      <Label htmlFor="financialYear">Financial Year</Label>
-                      <Select 
-                        value={selectedFinancialYear} 
-                        onValueChange={setSelectedFinancialYear}
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder="All Financial Years" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="">All Financial Years</SelectItem>
-                          {years.map((year) => (
-                            <SelectItem key={year.id} value={year.id}>
-                              {year.year}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div>
-                      <Label htmlFor="projectCode">Project Code</Label>
-                      <Input
-                        id="projectCode"
-                        value={projectCodeFilter}
-                        onChange={(e) => setProjectCodeFilter(e.target.value)}
-                        placeholder="Filter by project code"
-                      />
-                    </div>
-                    <div className="flex items-end">
-                      <Button 
-                        onClick={() => {
-                          setSelectedFinancialYear("");
-                          setProjectCodeFilter("");
-                          setSearchTerm("");
-                        }}
-                        variant="outline"
-                        className="w-full"
-                      >
-                        Clear Filters
-                      </Button>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-
-              <SearchBar 
-                searchTerm={searchTerm}
-                onSearchChange={setSearchTerm}
-              />
-              
-              <div className="flex items-center justify-between">
-                <div className="text-sm text-gray-600 bg-white/80 backdrop-blur-sm px-4 py-2 rounded-full border border-gray-200 shadow-sm">
-                  <span className="font-medium">Showing</span>{" "}
-                  <span className="font-bold text-blue-600">{filteredEntries.length}</span>{" "}
-                  of{" "}
-                  <span className="font-bold text-indigo-600">{ucEntries.length}</span>{" "}
-                  UC files
-                </div>
-              </div>
-              
-              {loading ? (
-                <div className="flex items-center justify-center h-64 bg-white/80 backdrop-blur-sm rounded-2xl">
-                  <div className="text-center">
-                    <RefreshCw className="h-12 w-12 animate-spin text-blue-600 mx-auto mb-4" />
-                    <span className="text-lg font-semibold text-gray-700">Loading UC files...</span>
-                  </div>
-                </div>
-              ) : filteredEntries.length === 0 ? (
-                <Card className="shadow-xl border-0 bg-white/90 backdrop-blur-lg rounded-2xl">
-                  <CardContent className="text-center py-16">
-                    <FileText className="w-20 h-20 text-gray-400 mx-auto mb-6" />
-                    <p className="text-xl font-bold text-gray-500 mb-2">
-                      {searchTerm || selectedFinancialYear || projectCodeFilter ? 'No UC files match your filters.' : 'No UC files found.'}
-                    </p>
-                    <p className="text-gray-400 text-sm">Upload some UC files to get started.</p>
-                  </CardContent>
-                </Card>
-              ) : (
-                <div className={`grid gap-6 ${
-                  viewMode === 'grid' 
-                    ? 'grid-cols-1 lg:grid-cols-2 xl:grid-cols-3' 
-                    : 'grid-cols-1'
-                }`}>
-                  {filteredEntries.map((entry: any) => (
-                    <UCCard
-                      key={entry.id}
-                      entry={entry}
-                      onPreview={previewFile}
-                      onDownload={downloadFile}
-                      onEdit={editUCEntry}
-                      onPrint={printFile}
-                      onDelete={deleteUCEntry}
-                    />
+      {/* Filters */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center space-x-2">
+            <Filter className="w-5 h-5" />
+            <span>Filters</span>
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="text-sm font-medium text-gray-700 mb-2 block">
+                Financial Year
+              </label>
+              <Select value={selectedYear} onValueChange={setSelectedYear}>
+                <SelectTrigger>
+                  <SelectValue placeholder="All Financial Years" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">All Financial Years</SelectItem>
+                  {years.map((year) => (
+                    <SelectItem key={year.id} value={year.id}>
+                      {year.year}
+                    </SelectItem>
                   ))}
-                </div>
-              )}
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <div>
+              <label className="text-sm font-medium text-gray-700 mb-2 block">
+                Search by Project Code or Title
+              </label>
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                <Input
+                  placeholder="Search by project code, title, or PI name..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-10"
+                />
+              </div>
             </div>
           </div>
-        </SidebarInset>
-        
-        <PreviewModal
-          isOpen={previewModal.isOpen}
-          onClose={() => setPreviewModal({ isOpen: false, filePath: '', fileName: '' })}
-          filePath={previewModal.filePath}
-          fileName={previewModal.fileName}
-        />
+        </CardContent>
+      </Card>
+
+      {/* Results Summary */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center space-x-2 text-sm text-gray-600">
+          <FileText className="w-4 h-4" />
+          <span>
+            Showing {filteredUCs.length} of {ucs.length} UC entries
+            {selectedYear && (
+              <span className="ml-2 px-2 py-1 bg-blue-100 text-blue-700 rounded-md text-xs">
+                {years.find(y => y.id === selectedYear)?.year}
+              </span>
+            )}
+          </span>
+        </div>
       </div>
-    </SidebarProvider>
+
+      {/* UC Cards */}
+      {loading ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {[...Array(6)].map((_, i) => (
+            <Card key={i} className="animate-pulse">
+              <CardContent className="p-6">
+                <div className="space-y-4">
+                  <div className="h-4 bg-gray-200 rounded w-3/4"></div>
+                  <div className="h-4 bg-gray-200 rounded w-1/2"></div>
+                  <div className="h-4 bg-gray-200 rounded w-2/3"></div>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      ) : filteredUCs.length === 0 ? (
+        <Card>
+          <CardContent className="p-12 text-center">
+            <FileText className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+            <h3 className="text-lg font-semibold text-gray-600 mb-2">No UC entries found</h3>
+            <p className="text-gray-500">
+              {searchTerm || selectedYear 
+                ? "No UC entries match your current filters. Try adjusting your search criteria."
+                : "Start by uploading your first UC entry."
+              }
+            </p>
+          </CardContent>
+        </Card>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {filteredUCs.map((uc) => (
+            <UCCard
+              key={uc.id}
+              entry={uc}
+              onPreview={handlePreview}
+              onDownload={handleDownload}
+              onEdit={handleEdit}
+              onPrint={handlePrint}
+              onDelete={handleDelete}
+            />
+          ))}
+        </div>
+      )}
+
+      {/* Preview Modal */}
+      {previewFile && (
+        <PreviewModal
+          filePath={previewFile.filePath}
+          fileName={previewFile.fileName}
+          onClose={() => setPreviewFile(null)}
+        />
+      )}
+    </div>
   );
 };
 

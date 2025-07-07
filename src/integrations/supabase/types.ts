@@ -131,6 +131,7 @@ export type Database = {
           id: string
           pi_id: string
           project_code: string
+          project_title: string | null
           project_type: string | null
           sanction_letter_file_name: string
           sanction_letter_file_path: string
@@ -161,6 +162,7 @@ export type Database = {
           id?: string
           pi_id: string
           project_code: string
+          project_title?: string | null
           project_type?: string | null
           sanction_letter_file_name: string
           sanction_letter_file_path: string
@@ -191,6 +193,7 @@ export type Database = {
           id?: string
           pi_id?: string
           project_code?: string
+          project_title?: string | null
           project_type?: string | null
           sanction_letter_file_name?: string
           sanction_letter_file_path?: string
