@@ -46,27 +46,52 @@ const UserManagement = () => {
   const fetchUsers = async () => {
     try {
       setLoading(true);
+      console.log('Fetching users...');
+      
+      // First, let's check if we can connect to Supabase
+      const { data: testData, error: testError } = await supabase
+        .from('users')
+        .select('count(*)', { count: 'exact', head: true });
+      
+      console.log('Connection test:', { testData, testError });
+      
       const { data, error } = await supabase
         .from('users')
         .select('*')
         .order('created_at', { ascending: false });
 
+      console.log('Users query result:', { data, error });
+
       if (error) {
         console.error('Error fetching users:', error);
-        toast({
-          title: "Error",
-          description: "Failed to fetch users",
-          variant: "destructive",
-        });
+        
+        // If it's an RLS policy issue, show a more helpful message
+        if (error.code === 'PGRST116' || error.message.includes('policy')) {
+          toast({
+            title: "Access Restricted",
+            description: "You don't have permission to view users. Admin access required.",
+            variant: "destructive",
+          });
+        } else {
+          toast({
+            title: "Error",
+            description: `Failed to fetch users: ${error.message}`,
+            variant: "destructive",
+          });
+        }
         return;
       }
 
       setUsers(data || []);
-    } catch (error) {
+      toast({
+        title: "Success",
+        description: `Loaded ${data?.length || 0} users`,
+      });
+    } catch (error: any) {
       console.error('Error fetching users:', error);
       toast({
         title: "Error",
-        description: "Failed to fetch users",
+        description: `Failed to fetch users: ${error.message}`,
         variant: "destructive",
       });
     } finally {

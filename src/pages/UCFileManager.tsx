@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -11,6 +10,7 @@ import { FileText, RefreshCw, Sparkles, Grid, List } from "lucide-react";
 import { SearchBar } from "@/components/uc/SearchBar";
 import { UCCard } from "@/components/uc/UCCard";
 import { PreviewModal } from "@/components/uc/PreviewModal";
+import UCEditForm from "@/components/uc/UCEditForm";
 
 const UCFileManager = () => {
   const [ucEntries, setUcEntries] = useState([]);
@@ -18,6 +18,7 @@ const UCFileManager = () => {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
+  const [editingUCId, setEditingUCId] = useState<string | null>(null);
   const [previewModal, setPreviewModal] = useState<{
     isOpen: boolean;
     filePath: string;
@@ -267,7 +268,16 @@ const UCFileManager = () => {
   };
 
   const editUCEntry = (ucId: string) => {
-    navigate(`/uc-upload?edit=${ucId}`);
+    setEditingUCId(ucId);
+  };
+
+  const handleEditComplete = () => {
+    setEditingUCId(null);
+    fetchUploadedUCEntries();
+  };
+
+  const handleEditCancel = () => {
+    setEditingUCId(null);
   };
 
   useEffect(() => {
@@ -289,6 +299,26 @@ const UCFileManager = () => {
   useEffect(() => {
     fetchUploadedUCEntries();
   }, []);
+
+  // If editing, show the edit form
+  if (editingUCId) {
+    return (
+      <SidebarProvider>
+        <div className="min-h-screen flex w-full bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100">
+          <Sidebar />
+          <SidebarInset>
+            <div className="flex-1 ml-64 p-6">
+              <UCEditForm
+                ucId={editingUCId}
+                onComplete={handleEditComplete}
+                onCancel={handleEditCancel}
+              />
+            </div>
+          </SidebarInset>
+        </div>
+      </SidebarProvider>
+    );
+  }
 
   return (
     <SidebarProvider>
