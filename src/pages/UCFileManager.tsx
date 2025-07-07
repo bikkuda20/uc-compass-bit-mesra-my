@@ -8,7 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useNavigate } from "react-router-dom";
 import { useUCEntries, useFinancialYears } from "@/hooks/useSupabaseData";
 import { UCCard } from "@/components/uc/UCCard";
-import { UCEditForm } from "@/components/uc/UCEditForm";
+import UCEditForm from "@/components/uc/UCEditForm"; // Fix: Use default import
 import { PreviewModal } from "@/components/uc/PreviewModal";
 import { useFileOperations } from "@/hooks/useFileOperations";
 import { useToast } from "@/hooks/use-toast";
@@ -23,7 +23,7 @@ const UCFileManager = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedYear, setSelectedYear] = useState('');
   const [editingUC, setEditingUC] = useState<any>(null);
-  const [previewFile, setPreviewFile] = useState<{filePath: string, fileName: string} | null>(null);
+  const [previewModal, setPreviewModal] = useState<{filePath: string, fileName: string} | null>(null); // Fix: Rename variable
 
   // Filter UCs based on financial year and project code search
   const filteredUCs = ucs.filter(uc => {
@@ -37,7 +37,7 @@ const UCFileManager = () => {
   });
 
   const handlePreview = (filePath: string, fileName: string) => {
-    setPreviewFile({ filePath, fileName });
+    setPreviewModal({ filePath, fileName }); // Fix: Use correct variable name
   };
 
   const handleDownload = async (filePath: string, fileName: string) => {
@@ -84,7 +84,7 @@ const UCFileManager = () => {
     return (
       <div className="p-6 space-y-6 bg-gradient-to-br from-blue-50 to-purple-100 min-h-screen">
         <UCEditForm
-          uc={editingUC}
+          ucId={editingUC.id} // Fix: Pass ucId instead of uc object
           onComplete={handleEditComplete}
           onCancel={() => setEditingUC(null)}
         />
@@ -211,11 +211,12 @@ const UCFileManager = () => {
       )}
 
       {/* Preview Modal */}
-      {previewFile && (
+      {previewModal && (
         <PreviewModal
-          filePath={previewFile.filePath}
-          fileName={previewFile.fileName}
-          onClose={() => setPreviewFile(null)}
+          isOpen={true} // Fix: Add required isOpen prop
+          filePath={previewModal.filePath} // Fix: Use correct prop name
+          fileName={previewModal.fileName} // Fix: Use correct prop name
+          onClose={() => setPreviewModal(null)} // Fix: Use correct variable name
         />
       )}
     </div>

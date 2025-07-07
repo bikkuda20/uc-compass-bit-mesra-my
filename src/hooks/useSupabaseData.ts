@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -26,6 +25,7 @@ export interface UCEntry {
     description?: string;
   };
   project_code: string;
+  project_title?: string; // Add project_title property
   project_type: string;
   uc_file_name: string;
   uc_file_path: string;
@@ -89,6 +89,7 @@ export const useUCEntries = () => {
         principal_investigator: item.principal_investigator || { id: '', name: 'Unknown PI' },
         scheme: item.scheme,
         project_code: item.project_code || '',
+        project_title: item.project_title || undefined, // Add project_title mapping
         project_type: item.project_type || 'Project',
         uc_file_name: item.uc_file_name || '',
         uc_file_path: item.uc_file_path || '',
