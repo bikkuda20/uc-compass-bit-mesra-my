@@ -1,299 +1,125 @@
 
-import { useState, useEffect } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Users, Building, Calendar, FileText, TrendingUp, Clock, CheckCircle, Upload } from "lucide-react";
-import { useFundingAgencies, useFinancialYears, usePrincipalInvestigators } from "@/hooks/useSupabaseData";
-import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "@/hooks/use-toast";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { FileText, Upload, TrendingUp, Settings, Users, Calendar, Building2, UserCheck, BarChart3 } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 const Dashboard = () => {
-  const [ucs, setUcs] = useState<any[]>([]);
-  const [recentUploadedUCs, setRecentUploadedUCs] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
-  const { agencies } = useFundingAgencies();
-  const { years } = useFinancialYears();
-  const { pis } = usePrincipalInvestigators();
-  const { toast } = useToast();
+  const navigate = useNavigate();
 
-  const [stats, setStats] = useState({
-    totalUCs: 0,
-    pendingUCs: 0,
-    verifiedUCs: 0,
-    submittedUCs: 0,
-  });
+  const menuItems = [
+    {
+      title: "UC Upload",
+      description: "Upload new UC files and sanction letters",
+      icon: Upload,
+      path: "/uc-upload",
+      color: "bg-blue-500",
+    },
+    {
+      title: "UC Tracker",
+      description: "Track the progress of UC submissions",
+      icon: TrendingUp,
+      path: "/uc-tracker",
+      color: "bg-green-500",
+    },
+    {
+      title: "UC File Manager",
+      description: "Manage and organize UC files",
+      icon: FileText,
+      path: "/uc-file-manager",
+      color: "bg-purple-500",
+    },
+    {
+      title: "UC Reports",
+      description: "Generate and export UC reports",
+      icon: BarChart3,
+      path: "/uc-reports",
+      color: "bg-orange-500",
+    },
+    {
+      title: "Funding Agencies",
+      description: "Manage funding agencies",
+      icon: Building2,
+      path: "/agencies",
+      color: "bg-indigo-500",
+    },
+    {
+      title: "Financial Years",
+      description: "Manage financial years",
+      icon: Calendar,
+      path: "/years",
+      color: "bg-teal-500",
+    },
+    {
+      title: "Principal Investigators",
+      description: "Manage PI information",
+      icon: UserCheck,
+      path: "/investigators",
+      color: "bg-pink-500",
+    },
+    {
+      title: "User Management",
+      description: "Manage system users",
+      icon: Users,
+      path: "/user-management",
+      color: "bg-red-500",
+    },
+    {
+      title: "Settings",
+      description: "System configuration and settings",
+      icon: Settings,
+      path: "/settings",
+      color: "bg-gray-500",
+    },
+  ];
 
-  // Fetch all UC entries for dashboard (not filtered by tracking status)
-  const fetchAllUCEntries = async () => {
-    try {
-      setLoading(true);
-      const { data, error } = await supabase
-        .from('uc_entries')
-        .select(`
-          *,
-          funding_agency:funding_agencies(id, name),
-          financial_year:financial_years(id, year),
-          principal_investigator:principal_investigators(id, name, email, department),
-          scheme:schemes(id, name, description)
-        `)
-        .order('created_at', { ascending: false });
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50">
+      <div className="container mx-auto px-6 py-12">
+        <div className="text-center mb-12">
+          <h1 className="text-4xl font-bold text-gray-900 mb-4">
+            UC Management System
+          </h1>
+          <p className="text-xl text-gray-600 max-w-2xl mx-auto">
+            Streamline your Utilization Certificate management with our comprehensive tracking and reporting system.
+          </p>
+        </div>
 
-      if (error) {
-        console.error('Error fetching UC entries:', error);
-        toast({
-          title: "Error",
-          description: "Failed to fetch UC entries",
-          variant: "destructive",
-        });
-        return;
-      }
-
-      setUcs(data || []);
-      
-      // Filter recently uploaded UCs (those without uc_received_date)
-      const uploadedUCs = (data || []).filter(uc => !uc.uc_received_date).slice(0, 5);
-      setRecentUploadedUCs(uploadedUCs);
-    } catch (error) {
-      console.error('Error:', error);
-      toast({
-        title: "Error",
-        description: "An unexpected error occurred",
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchAllUCEntries();
-  }, []);
-
-  useEffect(() => {
-    if (ucs.length > 0) {
-      const totalUCs = ucs.length;
-      const pendingUCs = ucs.filter(uc => uc.status === 'Pending').length;
-      const verifiedUCs = ucs.filter(uc => uc.status === 'Verified').length;
-      const submittedUCs = ucs.filter(uc => uc.status === 'Submitted').length;
-
-      setStats({
-        totalUCs,
-        pendingUCs,
-        verifiedUCs,
-        submittedUCs,
-      });
-    }
-  }, [ucs]);
-
-  const getActiveYear = () => {
-    return years.find(year => year.is_active)?.year || 'N/A';
-  };
-
-  const getRecentUCs = () => {
-    return ucs
-      .filter(uc => uc.uc_received_date) // Only show received UCs in tracking
-      .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
-      .slice(0, 5);
-  };
-
-  const getStatusBadge = (status: string) => {
-    const statusConfig = {
-      Pending: { variant: "secondary" as const, className: "bg-orange-100 text-orange-800" },
-      Submitted: { variant: "secondary" as const, className: "bg-blue-100 text-blue-800" },
-      Verified: { variant: "secondary" as const, className: "bg-green-100 text-green-800" },
-    };
-    
-    const config = statusConfig[status as keyof typeof statusConfig] || statusConfig.Pending;
-    return (
-      <Badge variant={config.variant} className={config.className}>
-        {status}
-      </Badge>
-    );
-  };
-
-  if (loading) {
-    return (
-      <div className="p-6 space-y-6">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {[...Array(4)].map((_, i) => (
-            <Card key={i} className="animate-pulse">
-              <CardContent className="p-6">
-                <div className="h-4 bg-gray-200 rounded w-1/2 mb-2"></div>
-                <div className="h-8 bg-gray-200 rounded w-3/4"></div>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+          {menuItems.map((item, index) => (
+            <Card 
+              key={index} 
+              className="group hover:shadow-2xl transition-all duration-300 cursor-pointer transform hover:-translate-y-2 bg-white/80 backdrop-blur-sm border-0 shadow-lg"
+              onClick={() => navigate(item.path)}
+            >
+              <CardHeader className="pb-4">
+                <div className={`w-16 h-16 ${item.color} rounded-2xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300`}>
+                  <item.icon className="w-8 h-8 text-white" />
+                </div>
+                <CardTitle className="text-xl font-semibold text-gray-900 group-hover:text-blue-600 transition-colors">
+                  {item.title}
+                </CardTitle>
+                <CardDescription className="text-gray-600">
+                  {item.description}
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Button 
+                  variant="ghost" 
+                  className="w-full group-hover:bg-blue-50 group-hover:text-blue-600 transition-colors"
+                >
+                  Access Module
+                </Button>
               </CardContent>
             </Card>
           ))}
         </div>
-      </div>
-    );
-  }
 
-  return (
-    <div className="p-6 space-y-6 bg-gradient-to-br from-blue-50 to-indigo-100 min-h-screen">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">Dashboard</h1>
-        <p className="text-gray-600">Welcome to the UC Management System</p>
-      </div>
-
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <Card className="bg-gradient-to-r from-blue-500 to-blue-600 text-white border-0 shadow-lg">
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-blue-100 text-sm font-medium">Total UCs</p>
-                <p className="text-3xl font-bold">{stats.totalUCs}</p>
-              </div>
-              <FileText className="h-8 w-8 text-blue-200" />
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="bg-gradient-to-r from-orange-500 to-orange-600 text-white border-0 shadow-lg">
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-orange-100 text-sm font-medium">Pending UCs</p>
-                <p className="text-3xl font-bold">{stats.pendingUCs}</p>
-              </div>
-              <Clock className="h-8 w-8 text-orange-200" />
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="bg-gradient-to-r from-green-500 to-green-600 text-white border-0 shadow-lg">
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-green-100 text-sm font-medium">Verified UCs</p>
-                <p className="text-3xl font-bold">{stats.verifiedUCs}</p>
-              </div>
-              <CheckCircle className="h-8 w-8 text-green-200" />
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="bg-gradient-to-r from-purple-500 to-purple-600 text-white border-0 shadow-lg">
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-purple-100 text-sm font-medium">Submitted UCs</p>
-                <p className="text-3xl font-bold">{stats.submittedUCs}</p>
-              </div>
-              <TrendingUp className="h-8 w-8 text-purple-200" />
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* System Overview */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <Card className="shadow-lg border-0">
-          <CardHeader className="pb-3">
-            <CardTitle className="flex items-center text-gray-900">
-              <Users className="h-5 w-5 mr-2 text-blue-600" />
-              Principal Investigators
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-3xl font-bold text-blue-600 mb-2">{pis.length}</div>
-            <p className="text-gray-600 text-sm">Total registered PIs</p>
-          </CardContent>
-        </Card>
-
-        <Card className="shadow-lg border-0">
-          <CardHeader className="pb-3">
-            <CardTitle className="flex items-center text-gray-900">
-              <Building className="h-5 w-5 mr-2 text-green-600" />
-              Funding Agencies
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-3xl font-bold text-green-600 mb-2">{agencies.length}</div>
-            <p className="text-gray-600 text-sm">Active agencies</p>
-          </CardContent>
-        </Card>
-
-        <Card className="shadow-lg border-0">
-          <CardHeader className="pb-3">
-            <CardTitle className="flex items-center text-gray-900">
-              <Calendar className="h-5 w-5 mr-2 text-purple-600" />
-              Active Financial Year
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-3xl font-bold text-purple-600 mb-2">{getActiveYear()}</div>
-            <p className="text-gray-600 text-sm">Current fiscal year</p>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Recent UCs and Recently Uploaded UCs */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Recent UC Submissions (tracking) */}
-        <Card className="shadow-lg border-0">
-          <CardHeader>
-            <CardTitle className="text-gray-900">Recent UC Submissions</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {getRecentUCs().length > 0 ? (
-              <div className="space-y-4">
-                {getRecentUCs().map((uc) => (
-                  <div key={uc.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-                    <div className="flex-1">
-                      <p className="font-medium text-gray-900">{uc.project_code}</p>
-                      <p className="text-sm text-gray-600">{uc.principal_investigator.name}</p>
-                      <p className="text-xs text-gray-500">{uc.funding_agency.name} • {uc.financial_year.year}</p>
-                    </div>
-                    <div className="text-right">
-                      {getStatusBadge(uc.status)}
-                      <p className="text-xs text-gray-500 mt-1">
-                        {new Date(uc.created_at).toLocaleDateString()}
-                      </p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <p className="text-gray-500 text-center py-8">No UC submissions found</p>
-            )}
-          </CardContent>
-        </Card>
-
-        {/* Recently Uploaded UCs */}
-        <Card className="shadow-lg border-0">
-          <CardHeader>
-            <CardTitle className="flex items-center text-gray-900">
-              <Upload className="h-5 w-5 mr-2 text-indigo-600" />
-              Recently Uploaded UCs
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            {recentUploadedUCs.length > 0 ? (
-              <div className="space-y-4">
-                {recentUploadedUCs.map((uc) => (
-                  <div key={uc.id} className="flex items-center justify-between p-4 bg-indigo-50 rounded-lg">
-                    <div className="flex-1">
-                      <p className="font-medium text-gray-900">{uc.project_code}</p>
-                      <p className="text-sm text-gray-600">{uc.principal_investigator.name}</p>
-                      <p className="text-xs text-gray-500">{uc.funding_agency.name} • {uc.financial_year.year}</p>
-                    </div>
-                    <div className="text-right">
-                      <Badge variant="secondary" className="bg-indigo-100 text-indigo-800">
-                        UPLOADED
-                      </Badge>
-                      <p className="text-xs text-gray-500 mt-1">
-                        {new Date(uc.created_at).toLocaleDateString()}
-                      </p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <p className="text-gray-500 text-center py-8">No recently uploaded UCs found</p>
-            )}
-          </CardContent>
-        </Card>
+        <div className="mt-16 text-center">
+          <p className="text-sm text-gray-500">
+            Built for efficient UC management and compliance tracking
+          </p>
+        </div>
       </div>
     </div>
   );

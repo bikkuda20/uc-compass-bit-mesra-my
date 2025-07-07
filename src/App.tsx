@@ -32,6 +32,7 @@ function App() {
             <Route path="/uc-upload" element={<UCUpload />} />
             <Route path="/uc-tracker" element={<UCTracker />} />
             <Route path="/uc-file-manager" element={<UCFileManager />} />
+            <Route path="/uc-files" element={<UCFileManager />} />
             <Route path="/uc-reports" element={<UCReports />} />
             <Route path="/agencies" element={<Agencies />} />
             <Route path="/years" element={<Years />} />
