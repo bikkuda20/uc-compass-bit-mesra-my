@@ -1,7 +1,7 @@
 
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { CheckCircle, AlertCircle, Calendar, User, Building, FileText } from "lucide-react";
+import { CheckCircle, AlertCircle, Calendar, User, Building, FileText, BookOpen } from "lucide-react";
 import { StatusBadge } from "./StatusBadge";
 import { FileActions } from "./FileActions";
 
@@ -66,6 +66,19 @@ export const UCCard = ({
               </span>
             </div>
           </div>
+
+          {/* Project Title */}
+          {entry.project_title && (
+            <div className="flex items-start space-x-2">
+              <BookOpen className="h-4 w-4 text-indigo-500 mt-0.5 flex-shrink-0" />
+              <div>
+                <p className="text-xs text-gray-500 font-medium">Project Title</p>
+                <p className="text-sm font-semibold text-gray-800 line-clamp-2">
+                  {entry.project_title}
+                </p>
+              </div>
+            </div>
+          )}
 
           {/* Details Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

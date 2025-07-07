@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -6,11 +7,15 @@ import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar";
 import { Sidebar } from "@/components/Sidebar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { FileText, RefreshCw, Sparkles, Grid, List } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { FileText, RefreshCw, Sparkles, Grid, List, Filter } from "lucide-react";
 import { SearchBar } from "@/components/uc/SearchBar";
 import { UCCard } from "@/components/uc/UCCard";
 import { PreviewModal } from "@/components/uc/PreviewModal";
 import UCEditForm from "@/components/uc/UCEditForm";
+import { useFinancialYears } from "@/hooks/useSupabaseData";
 
 const UCFileManager = () => {
   const [ucEntries, setUcEntries] = useState([]);
@@ -19,6 +24,8 @@ const UCFileManager = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [editingUCId, setEditingUCId] = useState<string | null>(null);
+  const [selectedFinancialYear, setSelectedFinancialYear] = useState<string>("");
+  const [projectCodeFilter, setProjectCodeFilter] = useState<string>("");
   const [previewModal, setPreviewModal] = useState<{
     isOpen: boolean;
     filePath: string;
@@ -30,13 +37,14 @@ const UCFileManager = () => {
   });
   const { toast } = useToast();
   const navigate = useNavigate();
+  const { years } = useFinancialYears();
 
   const fetchUploadedUCEntries = async () => {
     try {
       setLoading(true);
       console.log('Fetching UC entries...');
       
-      const { data, error } = await supabase
+      let query = supabase
         .from('uc_entries')
         .select(`
           *,
@@ -48,18 +56,34 @@ const UCFileManager = () => {
         .is('uc_received_date', null)
         .order('created_at', { ascending: false });
 
+      // Apply financial year filter
+      if (selectedFinancialYear) {
+        query = query.eq('financial_year_id', selectedFinancialYear);
+      }
+
+      const { data, error } = await query;
+
       if (error) {
         console.error('Database error:', error);
         throw error;
       }
 
       console.log('Fetched UC entries:', data);
-      setUcEntries(data || []);
-      setFilteredEntries(data || []);
+      let filteredData = data || [];
+
+      // Apply project code filter
+      if (projectCodeFilter.trim()) {
+        filteredData = filteredData.filter((entry: any) =>
+          entry.project_code?.toLowerCase().includes(projectCodeFilter.toLowerCase())
+        );
+      }
+
+      setUcEntries(filteredData);
+      setFilteredEntries(filteredData);
       
       toast({
         title: "Success",
-        description: `Loaded ${data?.length || 0} UC files`,
+        description: `Loaded ${filteredData.length} UC files`,
       });
     } catch (error: any) {
       console.error('Error fetching UC entries:', error);
@@ -284,6 +308,7 @@ const UCFileManager = () => {
     if (searchTerm.trim()) {
       const filtered = ucEntries.filter((entry: any) =>
         entry.project_code?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        entry.project_title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         entry.principal_investigator?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         entry.funding_agency?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         entry.scheme?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -298,7 +323,7 @@ const UCFileManager = () => {
 
   useEffect(() => {
     fetchUploadedUCEntries();
-  }, []);
+  }, [selectedFinancialYear, projectCodeFilter]);
 
   // If editing, show the edit form
   if (editingUCId) {
@@ -380,6 +405,61 @@ const UCFileManager = () => {
             </Card>
 
             <div className="space-y-6">
+              {/* Filters */}
+              <Card className="shadow-lg border-0 bg-white/90 backdrop-blur-sm rounded-2xl">
+                <CardHeader>
+                  <CardTitle className="flex items-center space-x-2">
+                    <Filter className="h-5 w-5" />
+                    <span>Filters</span>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div>
+                      <Label htmlFor="financialYear">Financial Year</Label>
+                      <Select 
+                        value={selectedFinancialYear} 
+                        onValueChange={setSelectedFinancialYear}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="All Financial Years" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="">All Financial Years</SelectItem>
+                          {years.map((year) => (
+                            <SelectItem key={year.id} value={year.id}>
+                              {year.year}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div>
+                      <Label htmlFor="projectCode">Project Code</Label>
+                      <Input
+                        id="projectCode"
+                        value={projectCodeFilter}
+                        onChange={(e) => setProjectCodeFilter(e.target.value)}
+                        placeholder="Filter by project code"
+                      />
+                    </div>
+                    <div className="flex items-end">
+                      <Button 
+                        onClick={() => {
+                          setSelectedFinancialYear("");
+                          setProjectCodeFilter("");
+                          setSearchTerm("");
+                        }}
+                        variant="outline"
+                        className="w-full"
+                      >
+                        Clear Filters
+                      </Button>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
               <SearchBar 
                 searchTerm={searchTerm}
                 onSearchChange={setSearchTerm}
@@ -407,7 +487,7 @@ const UCFileManager = () => {
                   <CardContent className="text-center py-16">
                     <FileText className="w-20 h-20 text-gray-400 mx-auto mb-6" />
                     <p className="text-xl font-bold text-gray-500 mb-2">
-                      {searchTerm ? 'No UC files match your search.' : 'No UC files found.'}
+                      {searchTerm || selectedFinancialYear || projectCodeFilter ? 'No UC files match your filters.' : 'No UC files found.'}
                     </p>
                     <p className="text-gray-400 text-sm">Upload some UC files to get started.</p>
                   </CardContent>

@@ -26,6 +26,7 @@ const UCForm = ({ uc, onComplete, onCancel }: UCFormProps) => {
     financialYearId: "",
     piId: "",
     projectCode: "",
+    projectTitle: "",
     ucEntryNo: "",
     projectType: "Project",
     status: "Pending",
@@ -50,6 +51,7 @@ const UCForm = ({ uc, onComplete, onCancel }: UCFormProps) => {
         financialYearId: uc.financial_year?.id || "",
         piId: uc.principal_investigator?.id || "",
         projectCode: uc.project_code || "",
+        projectTitle: uc.project_title || "",
         ucEntryNo: uc.uc_entry_no || "",
         projectType: uc.project_type || "Project",
         status: uc.status || "Pending",
@@ -91,6 +93,7 @@ const UCForm = ({ uc, onComplete, onCancel }: UCFormProps) => {
         financial_year_id: formData.financialYearId,
         pi_id: formData.piId,
         project_code: formData.projectCode,
+        project_title: formData.projectTitle,
         uc_entry_no: formData.ucEntryNo || null,
         project_type: formData.projectType,
         status: formData.status,
@@ -242,6 +245,16 @@ const UCForm = ({ uc, onComplete, onCancel }: UCFormProps) => {
                   onChange={(e) => handleInputChange("projectCode", e.target.value)}
                   placeholder="Enter project code"
                   required
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="projectTitle">Project Title</Label>
+                <Input
+                  id="projectTitle"
+                  value={formData.projectTitle}
+                  onChange={(e) => handleInputChange("projectTitle", e.target.value)}
+                  placeholder="Enter project title"
                 />
               </div>
 

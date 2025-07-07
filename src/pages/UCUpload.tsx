@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -22,6 +23,7 @@ const UCUpload = () => {
     financialYearId: "",
     piId: "",
     projectCode: "",
+    projectTitle: "",
     ucEntryNo: "",
     projectType: "Project",
     status: "Pending",
@@ -74,10 +76,10 @@ const UCUpload = () => {
     e.preventDefault();
     
     // Validation
-    if (!formData.fundingAgencyId || !formData.financialYearId || !formData.piId || !formData.projectCode) {
+    if (!formData.fundingAgencyId || !formData.financialYearId || !formData.piId || !formData.projectCode || !formData.projectTitle) {
       toast({
         title: "Validation Error",
-        description: "Please fill in all required fields",
+        description: "Please fill in all required fields including project title",
         variant: "destructive",
       });
       return;
@@ -146,6 +148,7 @@ const UCUpload = () => {
         financial_year_id: formData.financialYearId,
         pi_id: formData.piId,
         project_code: formData.projectCode,
+        project_title: formData.projectTitle,
         uc_entry_no: formData.ucEntryNo || null,
         project_type: formData.projectType,
         status: formData.status,
@@ -175,6 +178,7 @@ const UCUpload = () => {
         financialYearId: "",
         piId: "",
         projectCode: "",
+        projectTitle: "",
         ucEntryNo: "",
         projectType: "Project",
         status: "Pending",
@@ -358,6 +362,17 @@ const UCUpload = () => {
                   value={formData.projectCode}
                   onChange={(e) => handleInputChange("projectCode", e.target.value)}
                   placeholder="Enter project code"
+                  required
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="projectTitle">Project Title *</Label>
+                <Input
+                  id="projectTitle"
+                  value={formData.projectTitle}
+                  onChange={(e) => handleInputChange("projectTitle", e.target.value)}
+                  placeholder="Enter project title"
                   required
                 />
               </div>
