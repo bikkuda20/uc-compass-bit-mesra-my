@@ -46,13 +46,27 @@ export const UCCard = ({
               {/* File Attachments */}
               <div className="flex items-center space-x-3">
                 {entry.uc_file_path && entry.uc_file_name && (
-                  <div className="flex items-center space-x-1 px-2 py-1 bg-blue-50 rounded-md border border-blue-200">
+                  <div 
+                    className="flex items-center space-x-1 px-2 py-1 bg-blue-50 rounded-md border border-blue-200 cursor-pointer hover:bg-blue-100 transition-colors"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onPreview(entry.uc_file_path, entry.uc_file_name);
+                    }}
+                    title="Click to preview UC file"
+                  >
                     <FileText className="h-3 w-3 text-blue-600" />
                     <span className="text-xs font-semibold text-blue-700">UC</span>
                   </div>
                 )}
                 {entry.sanction_letter_file_path && entry.sanction_letter_file_name && (
-                  <div className="flex items-center space-x-1 px-2 py-1 bg-green-50 rounded-md border border-green-200">
+                  <div 
+                    className="flex items-center space-x-1 px-2 py-1 bg-green-50 rounded-md border border-green-200 cursor-pointer hover:bg-green-100 transition-colors"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onPreview(entry.sanction_letter_file_path, entry.sanction_letter_file_name);
+                    }}
+                    title="Click to preview Sanction Letter"
+                  >
                     <FileText className="h-3 w-3 text-green-600" />
                     <span className="text-xs font-semibold text-green-700">SL</span>
                   </div>

@@ -12,9 +12,10 @@ import UCDetailsModal from "./UCDetailsModal";
 
 interface UCListProps {
   onEditUC?: (ucId: string) => void;
+  onCreateUC?: () => void;
 }
 
-const UCList = ({ onEditUC }: UCListProps) => {
+const UCList = ({ onEditUC, onCreateUC }: UCListProps) => {
   const { ucs, loading, refetch, deleteUCEntry } = useUCEntries();
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
@@ -70,9 +71,16 @@ const UCList = ({ onEditUC }: UCListProps) => {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-3xl font-bold text-slate-800">UC Progress Tracker</h1>
-        <Button onClick={refetch} variant="outline">
-          Refresh
-        </Button>
+        <div className="flex space-x-2">
+          {onCreateUC && (
+            <Button onClick={onCreateUC} className="bg-blue-600 hover:bg-blue-700">
+              Create New UC Tracker
+            </Button>
+          )}
+          <Button onClick={refetch} variant="outline">
+            Refresh
+          </Button>
+        </div>
       </div>
 
       {/* Search and Filter Controls */}

@@ -129,6 +129,30 @@ export const useUCEntries = () => {
 
   const deleteUCEntry = async (ucId: string) => {
     try {
+      // First check if files exist and delete them from storage
+      const { data: entry } = await supabase
+        .from('uc_entries')
+        .select('uc_file_path, sanction_letter_file_path')
+        .eq('id', ucId)
+        .single();
+
+      if (entry) {
+        // Delete UC file if exists
+        if (entry.uc_file_path) {
+          await supabase.storage
+            .from('uc-files')
+            .remove([entry.uc_file_path]);
+        }
+        
+        // Delete sanction letter file if exists
+        if (entry.sanction_letter_file_path) {
+          await supabase.storage
+            .from('uc-files')
+            .remove([entry.sanction_letter_file_path]);
+        }
+      }
+
+      // Delete the database entry
       const { error } = await supabase
         .from('uc_entries')
         .delete()

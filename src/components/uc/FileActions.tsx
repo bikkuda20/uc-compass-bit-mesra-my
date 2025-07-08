@@ -1,4 +1,5 @@
 
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
   AlertDialog,
@@ -12,6 +13,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { Download, Trash2, Eye, Edit, Printer } from "lucide-react";
+import { FileDownloadOptions } from "./FileDownloadOptions";
 
 interface FileActionsProps {
   entry: any;
@@ -30,6 +32,8 @@ export const FileActions = ({
   onPrint,
   onDelete,
 }: FileActionsProps) => {
+  const [showDownloadOptions, setShowDownloadOptions] = useState(false);
+
   const handleClick = (e: React.MouseEvent, action: () => void) => {
     e.preventDefault();
     e.stopPropagation();
@@ -54,9 +58,9 @@ export const FileActions = ({
         <Button
           variant="outline"
           size="sm"
-          onClick={(e) => handleClick(e, () => onDownload(entry.uc_file_path, entry.uc_file_name))}
-          disabled={!entry.uc_file_path}
-          title="Download UC File"
+          onClick={(e) => handleClick(e, () => setShowDownloadOptions(true))}
+          disabled={!entry.uc_file_path && !entry.sanction_letter_file_path}
+          title="Download Files"
           className="h-10 w-10 p-0 border-2 border-green-200 hover:bg-green-50 hover:text-green-700 hover:border-green-400 hover:scale-105 transition-all duration-200"
         >
           <Download className="h-4 w-4" />
@@ -147,6 +151,14 @@ export const FileActions = ({
           </AlertDialogContent>
         </AlertDialog>
       </div>
+      
+      {/* Download Options Modal */}
+      <FileDownloadOptions
+        isOpen={showDownloadOptions}
+        onClose={() => setShowDownloadOptions(false)}
+        entry={entry}
+        onDownload={onDownload}
+      />
     </div>
   );
 };
