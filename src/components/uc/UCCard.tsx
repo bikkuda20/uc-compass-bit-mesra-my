@@ -43,19 +43,27 @@ export const UCCard = ({
               </div>
               <div className="flex items-center space-x-2">
                 <StatusBadge status={entry.status} />
-                <div className="flex items-center space-x-1">
-                  {entry.uc_file_path && entry.uc_file_name ? (
-                    <>
-                      <CheckCircle className="h-4 w-4 text-green-500" />
-                      <span className="text-xs text-green-600 font-medium">File Available</span>
-                    </>
-                  ) : (
-                    <>
-                      <AlertCircle className="h-4 w-4 text-red-500" />
-                      <span className="text-xs text-red-600 font-medium">No File</span>
-                    </>
-                  )}
-                </div>
+              {/* File Attachments */}
+              <div className="flex items-center space-x-3">
+                {entry.uc_file_path && entry.uc_file_name && (
+                  <div className="flex items-center space-x-1 px-2 py-1 bg-blue-50 rounded-md border border-blue-200">
+                    <FileText className="h-3 w-3 text-blue-600" />
+                    <span className="text-xs font-semibold text-blue-700">UC</span>
+                  </div>
+                )}
+                {entry.sanction_letter_file_path && entry.sanction_letter_file_name && (
+                  <div className="flex items-center space-x-1 px-2 py-1 bg-green-50 rounded-md border border-green-200">
+                    <FileText className="h-3 w-3 text-green-600" />
+                    <span className="text-xs font-semibold text-green-700">SL</span>
+                  </div>
+                )}
+                {!entry.uc_file_path && !entry.sanction_letter_file_path && (
+                  <div className="flex items-center space-x-1">
+                    <AlertCircle className="h-4 w-4 text-red-500" />
+                    <span className="text-xs text-red-600 font-medium">No Files</span>
+                  </div>
+                )}
+              </div>
               </div>
             </div>
             

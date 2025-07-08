@@ -70,8 +70,8 @@ const UCFileManager = () => {
     }
   };
 
-  const handleEdit = (uc: any) => {
-    setEditingUC(uc);
+  const handleEdit = (ucId: string) => {
+    setEditingUC({ id: ucId });
   };
 
   const handlePrint = async (filePath: string) => {
@@ -108,11 +108,21 @@ const UCFileManager = () => {
   };
 
   const handleDelete = async (ucId: string) => {
-    const success = await deleteUCEntry(ucId);
-    if (success) {
+    try {
+      const success = await deleteUCEntry(ucId);
+      if (success) {
+        toast({
+          title: "Success",
+          description: "UC entry deleted successfully",
+        });
+        refetch();
+      }
+    } catch (error) {
+      console.error('Delete failed:', error);
       toast({
-        title: "Success",
-        description: "UC entry deleted successfully",
+        title: "Delete Failed",
+        description: "Failed to delete UC entry. Please try again.",
+        variant: "destructive",
       });
     }
   };

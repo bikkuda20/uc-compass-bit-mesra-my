@@ -66,6 +66,7 @@ export const useUCEntries = () => {
           principal_investigator:principal_investigators(id, name, email, department),
           scheme:schemes(id, name, description)
         `)
+        .not('uc_received_date', 'is', null)
         .order('created_at', { ascending: false });
 
       if (error) {
