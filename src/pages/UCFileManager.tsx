@@ -10,14 +10,13 @@ import { useUCEntries, useFinancialYears } from "@/hooks/useSupabaseData";
 import { UCCard } from "@/components/uc/UCCard";
 import UCEditForm from "@/components/uc/UCEditForm"; // Fix: Use default import
 import { PreviewModal } from "@/components/uc/PreviewModal";
-import { useFileOperations } from "@/hooks/useFileOperations";
 import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 
 const UCFileManager = () => {
   const navigate = useNavigate();
   const { years } = useFinancialYears();
   const { ucs, loading, refetch, deleteUCEntry } = useUCEntries();
-  const { downloadFile, previewFile } = useFileOperations();
   const { toast } = useToast();
 
   const [searchTerm, setSearchTerm] = useState('');
@@ -42,7 +41,25 @@ const UCFileManager = () => {
 
   const handleDownload = async (filePath: string, fileName: string) => {
     try {
-      await downloadFile(filePath, fileName);
+      const { data, error } = await supabase.storage
+        .from('uc-files')
+        .download(filePath);
+
+      if (error) throw error;
+
+      const url = URL.createObjectURL(data);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = fileName;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+
+      toast({
+        title: "Success",
+        description: "File downloaded successfully",
+      });
     } catch (error) {
       console.error('Download failed:', error);
       toast({
@@ -57,12 +74,37 @@ const UCFileManager = () => {
     setEditingUC(uc);
   };
 
-  const handlePrint = (filePath: string) => {
-    console.log('Print functionality not implemented yet for:', filePath);
-    toast({
-      title: "Print",
-      description: "Print functionality will be implemented soon.",
-    });
+  const handlePrint = async (filePath: string) => {
+    try {
+      const { data, error } = await supabase.storage
+        .from('uc-files')
+        .download(filePath);
+
+      if (error) throw error;
+
+      const url = URL.createObjectURL(data);
+      const printWindow = window.open(url, '_blank');
+      if (printWindow) {
+        printWindow.onload = () => {
+          printWindow.print();
+          URL.revokeObjectURL(url);
+        };
+      } else {
+        URL.revokeObjectURL(url);
+        toast({
+          title: "Print Failed",
+          description: "Unable to open print window. Please check your popup blocker.",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      console.error('Print failed:', error);
+      toast({
+        title: "Print Failed",
+        description: "Failed to load file for printing. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
   const handleDelete = async (ucId: string) => {
