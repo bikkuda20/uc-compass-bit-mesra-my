@@ -21,13 +21,13 @@ const UCFileManager = () => {
   const { toast } = useToast();
 
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedYear, setSelectedYear] = useState('');
+  const [selectedYear, setSelectedYear] = useState('all');
   const [editingUC, setEditingUC] = useState<any>(null);
   const [previewModal, setPreviewModal] = useState<{filePath: string, fileName: string} | null>(null); // Fix: Rename variable
 
   // Filter UCs based on financial year and project code search
   const filteredUCs = ucs.filter(uc => {
-    const matchesYear = !selectedYear || uc.financial_year?.id === selectedYear;
+    const matchesYear = selectedYear === 'all' || uc.financial_year?.id === selectedYear;
     const matchesSearch = !searchTerm || 
       uc.project_code.toLowerCase().includes(searchTerm.toLowerCase()) ||
       uc.project_title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -123,7 +123,7 @@ const UCFileManager = () => {
                   <SelectValue placeholder="All Financial Years" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All Financial Years</SelectItem>
+                  <SelectItem value="all">All Financial Years</SelectItem>
                   {years.map((year) => (
                     <SelectItem key={year.id} value={year.id}>
                       {year.year}

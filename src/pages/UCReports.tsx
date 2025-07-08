@@ -17,18 +17,18 @@ const UCReports = () => {
   const { agencies } = useFundingAgencies();
 
   const [filters, setFilters] = useState({
-    financialYear: '',
-    fundingAgency: '',
-    status: '',
+    financialYear: 'all',
+    fundingAgency: 'all',
+    status: 'all',
     dateRange: 'all', // all, thisMonth, thisQuarter, thisYear
   });
 
   // Filter UCs based on selected criteria
   const filteredUCs = useMemo(() => {
     return ucs.filter(uc => {
-      if (filters.financialYear && uc.financial_year?.id !== filters.financialYear) return false;
-      if (filters.fundingAgency && uc.funding_agency?.id !== filters.fundingAgency) return false;
-      if (filters.status && uc.current_status !== filters.status) return false;
+      if (filters.financialYear !== 'all' && uc.financial_year?.id !== filters.financialYear) return false;
+      if (filters.fundingAgency !== 'all' && uc.funding_agency?.id !== filters.fundingAgency) return false;
+      if (filters.status !== 'all' && uc.current_status !== filters.status) return false;
       
       // Date range filtering
       if (filters.dateRange !== 'all' && uc.uc_handed_over_pi_date) {
@@ -166,7 +166,7 @@ const UCReports = () => {
                   <SelectValue placeholder="All Years" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All Years</SelectItem>
+                  <SelectItem value="all">All Years</SelectItem>
                   {years.map((year) => (
                     <SelectItem key={year.id} value={year.id}>
                       {year.year}
@@ -188,7 +188,7 @@ const UCReports = () => {
                   <SelectValue placeholder="All Agencies" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All Agencies</SelectItem>
+                  <SelectItem value="all">All Agencies</SelectItem>
                   {agencies.map((agency) => (
                     <SelectItem key={agency.id} value={agency.id}>
                       {agency.name}
@@ -210,7 +210,7 @@ const UCReports = () => {
                   <SelectValue placeholder="All Statuses" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All Statuses</SelectItem>
+                  <SelectItem value="all">All Statuses</SelectItem>
                   <SelectItem value="Not Started">Not Started</SelectItem>
                   <SelectItem value="Received from PI">Received from PI</SelectItem>
                   <SelectItem value="Verified by Related Person">Verified by Related Person</SelectItem>
