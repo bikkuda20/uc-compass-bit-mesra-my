@@ -6,7 +6,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { ArrowLeft, Search, FileText, Filter } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useNavigate } from "react-router-dom";
-import { useUCEntries, useFinancialYears } from "@/hooks/useSupabaseData";
+import { useAllUCEntries, useFinancialYears } from "@/hooks/useSupabaseData";
 import { UCCard } from "@/components/uc/UCCard";
 import UCEditForm from "@/components/uc/UCEditForm"; // Fix: Use default import
 import { PreviewModal } from "@/components/uc/PreviewModal";
@@ -16,7 +16,7 @@ import { supabase } from "@/integrations/supabase/client";
 const UCFileManager = () => {
   const navigate = useNavigate();
   const { years } = useFinancialYears();
-  const { ucs, loading, refetch, deleteUCEntry } = useUCEntries();
+  const { ucs, loading, refetch, deleteUCEntry } = useAllUCEntries();
   const { toast } = useToast();
 
   const [searchTerm, setSearchTerm] = useState('');

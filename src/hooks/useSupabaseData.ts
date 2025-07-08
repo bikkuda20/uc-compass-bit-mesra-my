@@ -193,6 +193,116 @@ export const useUCEntries = () => {
 
   return { ucs, loading, refetch: fetchUCEntries, deleteUCEntry };
 };
+export const useAllUCEntries = () => {
+  const [ucs, setUcs] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const { toast } = useToast();
+
+  const fetchAllUCEntries = async () => {
+    try {
+      setLoading(true);
+      const { data, error } = await supabase
+        .from('uc_entries')
+        .select(`
+          *,
+          funding_agency:funding_agencies(id, name),
+          financial_year:financial_years(id, year),
+          principal_investigator:principal_investigators(id, name, email, department),
+          scheme:schemes(id, name, description)
+        `)
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error('Error fetching all UC entries:', error);
+        toast({
+          title: "Database Error",
+          description: `Failed to fetch UC entries: ${error.message}`,
+          variant: "destructive",
+        });
+        setUcs([]);
+        return;
+      }
+
+      setUcs(data || []);
+    } catch (error: any) {
+      console.error('Unexpected error:', error);
+      toast({
+        title: "Error",
+        description: `An unexpected error occurred: ${error.message}`,
+        variant: "destructive",
+      });
+      setUcs([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const deleteUCEntry = async (ucId: string) => {
+    try {
+      // First check if files exist and delete them from storage
+      const { data: entry } = await supabase
+        .from('uc_entries')
+        .select('uc_file_path, sanction_letter_file_path')
+        .eq('id', ucId)
+        .single();
+
+      if (entry) {
+        // Delete UC file if exists
+        if (entry.uc_file_path) {
+          await supabase.storage
+            .from('uc-files')
+            .remove([entry.uc_file_path]);
+        }
+        
+        // Delete sanction letter file if exists
+        if (entry.sanction_letter_file_path) {
+          await supabase.storage
+            .from('uc-files')
+            .remove([entry.sanction_letter_file_path]);
+        }
+      }
+
+      // Delete the database entry
+      const { error } = await supabase
+        .from('uc_entries')
+        .delete()
+        .eq('id', ucId);
+
+      if (error) {
+        console.error('Error deleting UC entry:', error);
+        toast({
+          title: "Delete Failed",
+          description: `Failed to delete UC entry: ${error.message}`,
+          variant: "destructive",
+        });
+        return false;
+      }
+
+      toast({
+        title: "Success",
+        description: "UC entry deleted successfully",
+      });
+      
+      // Refresh the list
+      await fetchAllUCEntries();
+      return true;
+    } catch (error: any) {
+      console.error('Unexpected error during delete:', error);
+      toast({
+        title: "Error",
+        description: `An unexpected error occurred: ${error.message}`,
+        variant: "destructive",
+      });
+      return false;
+    }
+  };
+
+  useEffect(() => {
+    fetchAllUCEntries();
+  }, []);
+
+  return { ucs, loading, refetch: fetchAllUCEntries, deleteUCEntry };
+};
 
 export const useFundingAgencies = () => {
   const [agencies, setAgencies] = useState<Array<{id: string, name: string, created_at?: string, updated_at?: string}>>([]);
