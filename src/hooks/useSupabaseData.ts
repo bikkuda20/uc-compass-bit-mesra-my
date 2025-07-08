@@ -210,6 +210,7 @@ export const useAllUCEntries = () => {
           principal_investigator:principal_investigators(id, name, email, department),
           scheme:schemes(id, name, description)
         `)
+        .or('uc_file_path.neq.,sanction_letter_file_path.neq.')
         .order('created_at', { ascending: false });
 
       if (error) {
