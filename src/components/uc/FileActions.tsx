@@ -81,7 +81,9 @@ export const FileActions = ({
       {/* Sanction Letter Actions (if available) */}
       {entry.sanction_letter_file_path && (
         <div className="flex items-center gap-2 border-l pl-3 border-gray-200">
-          <span className="text-xs text-gray-500 font-medium">Sanction:</span>
+          <div className="px-2 py-1 rounded-md bg-gradient-to-r from-emerald-500/10 to-teal-500/10 border border-emerald-200/50">
+            <span className="text-xs font-bold text-emerald-700">SL</span>
+          </div>
           <Button
             variant="outline"
             size="sm"
@@ -142,7 +144,10 @@ export const FileActions = ({
             <AlertDialogFooter>
               <AlertDialogCancel>Cancel</AlertDialogCancel>
               <AlertDialogAction 
-                onClick={() => onDelete(entry.id)}
+                onClick={() => {
+                  console.log('Delete button clicked for UC:', entry.id);
+                  onDelete(entry.id);
+                }}
                 className="bg-red-600 hover:bg-red-700"
               >
                 Delete
