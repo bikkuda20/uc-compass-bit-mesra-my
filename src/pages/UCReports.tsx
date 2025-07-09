@@ -1,20 +1,24 @@
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useRef } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, FileText, Download, Calendar, User, Building, TrendingUp } from "lucide-react";
+import { ArrowLeft, FileText, Download, Calendar, User, Building, TrendingUp, Printer } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useUCEntries, useFinancialYears, useFundingAgencies } from "@/hooks/useSupabaseData";
 import { format } from "date-fns";
+import { useReactToPrint } from 'react-to-print';
+import jsPDF from 'jspdf';
+import 'jspdf-autotable';
 
 const UCReports = () => {
   const navigate = useNavigate();
   const { ucs, loading } = useUCEntries();
   const { years } = useFinancialYears();
   const { agencies } = useFundingAgencies();
+  const printRef = useRef<HTMLDivElement>(null);
 
   const [filters, setFilters] = useState({
     financialYear: 'all',
@@ -67,6 +71,49 @@ const UCReports = () => {
     
     return stats;
   }, [filteredUCs]);
+
+  // Print functionality
+  const handlePrint = useReactToPrint({
+    contentRef: printRef,
+    documentTitle: `UC_Report_${format(new Date(), 'yyyy-MM-dd')}`,
+  });
+
+  // Export to PDF
+  const exportToPDF = () => {
+    const doc = new jsPDF('l', 'mm', 'a4'); // landscape orientation
+    
+    // Add title
+    doc.setFontSize(16);
+    doc.text('UC Report', 14, 15);
+    doc.setFontSize(10);
+    doc.text(`Generated on: ${format(new Date(), 'dd/MM/yyyy HH:mm')}`, 14, 25);
+    
+    // Prepare data for the table
+    const tableData = filteredUCs.map(uc => [
+      uc.uc_entry_no || 'N/A',
+      uc.project_code || 'N/A',
+      uc.project_title || 'N/A',
+      uc.principal_investigator?.name || 'N/A',
+      uc.funding_agency?.name || 'N/A',
+      uc.financial_year?.year || 'N/A',
+      uc.current_status || 'Not Started',
+      uc.uc_handed_over_pi_date ? format(new Date(uc.uc_handed_over_pi_date), 'dd/MM/yyyy') : 'Not handed over'
+    ]);
+
+    // Add table
+    (doc as any).autoTable({
+      startY: 35,
+      head: [['UC Entry', 'Project Code', 'Project Title', 'PI Name', 'Funding Agency', 'Financial Year', 'Status', 'Handed Over Date']],
+      body: tableData,
+      styles: { fontSize: 8 },
+      headStyles: { fillColor: [59, 130, 246], textColor: [255, 255, 255] },
+      alternateRowStyles: { fillColor: [249, 250, 251] },
+      margin: { top: 35, left: 14, right: 14 },
+    });
+
+    // Save the PDF
+    doc.save(`UC_Report_${format(new Date(), 'yyyy-MM-dd')}.pdf`);
+  };
 
   // Export to CSV
   const exportToCSV = () => {
@@ -141,10 +188,20 @@ const UCReports = () => {
           </Button>
           <h2 className="text-2xl font-bold text-slate-800">UC Reports</h2>
         </div>
-        <Button onClick={exportToCSV} className="bg-green-600 hover:bg-green-700">
-          <Download className="w-4 h-4 mr-2" />
-          Export CSV
-        </Button>
+        <div className="flex items-center space-x-2">
+          <Button onClick={handlePrint} variant="outline" className="border-purple-200 hover:bg-purple-50 hover:text-purple-700">
+            <Printer className="w-4 h-4 mr-2" />
+            Print
+          </Button>
+          <Button onClick={exportToPDF} className="bg-red-600 hover:bg-red-700">
+            <FileText className="w-4 h-4 mr-2" />
+            Export PDF
+          </Button>
+          <Button onClick={exportToCSV} className="bg-green-600 hover:bg-green-700">
+            <Download className="w-4 h-4 mr-2" />
+            Export CSV
+          </Button>
+        </div>
       </div>
 
       {/* Filters */}
@@ -306,9 +363,10 @@ const UCReports = () => {
       </div>
 
       {/* Detailed Report Table */}
-      <Card>
+      <Card ref={printRef}>
         <CardHeader>
           <CardTitle>Detailed UC Report</CardTitle>
+          <p className="text-sm text-gray-500">Generated on: {format(new Date(), 'dd/MM/yyyy HH:mm')}</p>
         </CardHeader>
         <CardContent>
           {loading ? (
@@ -330,7 +388,8 @@ const UCReports = () => {
                 <thead>
                   <tr className="border-b border-gray-200">
                     <th className="text-left p-3 font-medium text-gray-700">UC Entry</th>
-                    <th className="text-left p-3 font-medium text-gray-700">Project</th>
+                    <th className="text-left p-3 font-medium text-gray-700">Project Code</th>
+                    <th className="text-left p-3 font-medium text-gray-700">Project Title</th>
                     <th className="text-left p-3 font-medium text-gray-700">PI</th>
                     <th className="text-left p-3 font-medium text-gray-700">Agency</th>
                     <th className="text-left p-3 font-medium text-gray-700">Status</th>
@@ -341,10 +400,10 @@ const UCReports = () => {
                   {filteredUCs.map((uc) => (
                     <tr key={uc.id} className="border-b border-gray-100 hover:bg-gray-50">
                       <td className="p-3">
-                        <div>
-                          <p className="font-medium text-gray-900">{uc.uc_entry_no || 'N/A'}</p>
-                          <p className="text-sm text-gray-500">{uc.project_code}</p>
-                        </div>
+                        <p className="font-medium text-gray-900">{uc.uc_entry_no || 'N/A'}</p>
+                      </td>
+                      <td className="p-3">
+                        <p className="font-medium text-gray-900">{uc.project_code}</p>
                       </td>
                       <td className="p-3">
                         <p className="font-medium text-gray-900 max-w-xs truncate">
