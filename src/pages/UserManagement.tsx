@@ -131,16 +131,21 @@ const UserManagement = () => {
           throw new Error("Password is required for new users");
         }
 
-        // Create auth user
-        const { data: authData, error: authError } = await supabase.auth.signUp({
+        console.log('Creating new user with email:', formData.email);
+        
+        // Check current user before creating
+        const { data: currentUser } = await supabase.auth.getUser();
+        console.log('Current user before signup:', currentUser);
+
+        // Create auth user with admin privileges (bypassing auto-signin)
+        const { data: authData, error: authError } = await supabase.auth.admin.createUser({
           email: formData.email,
           password: formData.password,
-          options: {
-            emailRedirectTo: `${window.location.origin}/`,
-          }
+          email_confirm: true, // Auto-confirm email to avoid verification step
         });
 
         if (authError) {
+          console.error('Auth creation error:', authError);
           throw authError;
         }
 
@@ -148,7 +153,9 @@ const UserManagement = () => {
           throw new Error("Failed to create user");
         }
 
-        // Create profile in public.users table
+        console.log('Auth user created:', authData.user.id);
+
+        // Create profile in public.users table using the auth user's ID
         const { error: profileError } = await supabase
           .from('users')
           .insert([{
@@ -160,8 +167,11 @@ const UserManagement = () => {
           }]);
 
         if (profileError) {
+          console.error('Profile creation error:', profileError);
           throw profileError;
         }
+
+        console.log('Profile created successfully');
 
         toast({
           title: "Success",
