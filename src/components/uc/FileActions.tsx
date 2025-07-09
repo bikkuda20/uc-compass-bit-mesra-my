@@ -125,11 +125,6 @@ export const FileActions = ({
               size="sm" 
               className="h-8 w-8 p-0 border border-red-200 hover:bg-red-50 hover:text-red-700 hover:border-red-400 transition-all duration-200" 
               title="Delete Entry"
-              onClick={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                console.log('Delete trigger clicked for UC:', entry.id);
-              }}
             >
               <Trash2 className="h-3 w-3" />
             </Button>
@@ -145,11 +140,14 @@ export const FileActions = ({
             <AlertDialogFooter>
               <AlertDialogCancel>Cancel</AlertDialogCancel>
               <AlertDialogAction 
-                onClick={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
+                onClick={() => {
                   console.log('Delete confirmed for UC:', entry.id);
-                  onDelete(entry.id);
+                  try {
+                    onDelete(entry.id);
+                    console.log('Delete function called successfully');
+                  } catch (error) {
+                    console.error('Error calling delete function:', error);
+                  }
                 }}
                 className="bg-red-600 hover:bg-red-700"
               >
