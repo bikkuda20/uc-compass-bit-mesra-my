@@ -11,7 +11,7 @@ import { useUCEntries, useFinancialYears, useFundingAgencies } from "@/hooks/use
 import { format } from "date-fns";
 import { useReactToPrint } from 'react-to-print';
 import jsPDF from 'jspdf';
-import 'jspdf-autotable';
+import autoTable from 'jspdf-autotable';
 
 const UCReports = () => {
   const navigate = useNavigate();
@@ -100,8 +100,8 @@ const UCReports = () => {
       uc.uc_handed_over_pi_date ? format(new Date(uc.uc_handed_over_pi_date), 'dd/MM/yyyy') : 'Not handed over'
     ]);
 
-    // Add table
-    (doc as any).autoTable({
+    // Add table using autoTable
+    autoTable(doc, {
       startY: 35,
       head: [['UC Entry', 'Project Code', 'Project Title', 'PI Name', 'Funding Agency', 'Financial Year', 'Status', 'Handed Over Date']],
       body: tableData,
