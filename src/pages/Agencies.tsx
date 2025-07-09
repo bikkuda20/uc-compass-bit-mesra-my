@@ -12,6 +12,8 @@ import { useFundingAgencies, useSchemes } from "@/hooks/useSupabaseData";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
+import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar";
+import { Sidebar } from "@/components/Sidebar";
 
 const Agencies = () => {
   const [isFormOpen, setIsFormOpen] = useState(false);
@@ -279,8 +281,12 @@ const Agencies = () => {
   }
 
   return (
-    <div className="p-6 space-y-6 bg-gradient-to-br from-green-50 to-teal-100 min-h-screen">
-      <div className="flex items-center justify-between mb-8">
+    <SidebarProvider>
+      <div className="min-h-screen flex w-full bg-gradient-to-br from-green-50 to-teal-100">
+        <Sidebar />
+        <SidebarInset>
+          <div className="flex-1 ml-64 p-6 space-y-6">
+            <div className="flex items-center justify-between mb-8">
         <div className="flex items-center space-x-4">
           <Button
             variant="outline"
@@ -599,7 +605,10 @@ const Agencies = () => {
           </Button>
         </DialogContent>
       </Dialog>
-    </div>
+          </div>
+        </SidebarInset>
+      </div>
+    </SidebarProvider>
   );
 };
 
