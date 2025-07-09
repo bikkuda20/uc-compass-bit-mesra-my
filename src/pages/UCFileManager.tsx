@@ -12,6 +12,8 @@ import UCEditForm from "@/components/uc/UCEditForm"; // Fix: Use default import
 import { PreviewModal } from "@/components/uc/PreviewModal";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar";
+import { Sidebar } from "@/components/Sidebar";
 
 const UCFileManager = () => {
   const navigate = useNavigate();
@@ -134,18 +136,29 @@ const UCFileManager = () => {
 
   if (editingUC) {
     return (
-      <div className="p-6 space-y-6 bg-gradient-to-br from-blue-50 to-purple-100 min-h-screen">
-        <UCEditForm
-          ucId={editingUC.id} // Fix: Pass ucId instead of uc object
-          onComplete={handleEditComplete}
-          onCancel={() => setEditingUC(null)}
-        />
-      </div>
+      <SidebarProvider>
+        <div className="min-h-screen flex w-full bg-gradient-to-br from-blue-50 to-purple-100">
+          <Sidebar />
+          <SidebarInset>
+            <div className="flex-1 ml-64 p-6 space-y-6">
+              <UCEditForm
+                ucId={editingUC.id} // Fix: Pass ucId instead of uc object
+                onComplete={handleEditComplete}
+                onCancel={() => setEditingUC(null)}
+              />
+            </div>
+          </SidebarInset>
+        </div>
+      </SidebarProvider>
     );
   }
 
   return (
-    <div className="p-6 space-y-6 bg-gradient-to-br from-blue-50 to-purple-100 min-h-screen">
+    <SidebarProvider>
+      <div className="min-h-screen flex w-full bg-gradient-to-br from-blue-50 to-purple-100">
+        <Sidebar />
+        <SidebarInset>
+          <div className="flex-1 ml-64 p-6 space-y-6">
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-4">
           <Button variant="ghost" onClick={() => navigate('/')}>
@@ -271,7 +284,10 @@ const UCFileManager = () => {
           onClose={() => setPreviewModal(null)} // Fix: Use correct variable name
         />
       )}
-    </div>
+          </div>
+        </SidebarInset>
+      </div>
+    </SidebarProvider>
   );
 };
 

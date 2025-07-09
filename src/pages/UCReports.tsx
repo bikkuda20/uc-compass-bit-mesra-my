@@ -12,6 +12,8 @@ import { format } from "date-fns";
 import { useReactToPrint } from 'react-to-print';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
+import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar";
+import { Sidebar } from "@/components/Sidebar";
 
 const UCReports = () => {
   const navigate = useNavigate();
@@ -178,7 +180,11 @@ const UCReports = () => {
   };
 
   return (
-    <div className="p-6 space-y-6 bg-gradient-to-br from-purple-50 to-pink-100 min-h-screen">
+    <SidebarProvider>
+      <div className="min-h-screen flex w-full bg-gradient-to-br from-purple-50 to-pink-100">
+        <Sidebar />
+        <SidebarInset>
+          <div className="flex-1 ml-64 p-6 space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-4">
@@ -445,7 +451,10 @@ const UCReports = () => {
           )}
         </CardContent>
       </Card>
-    </div>
+          </div>
+        </SidebarInset>
+      </div>
+    </SidebarProvider>
   );
 };
 

@@ -10,6 +10,8 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useFundingAgencies, useFinancialYears, usePrincipalInvestigators, useSchemes } from "@/hooks/useSupabaseData";
 import { useNavigate } from "react-router-dom";
+import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar";
+import { Sidebar } from "@/components/Sidebar";
 
 const UCUpload = () => {
   const { agencies } = useFundingAgencies();
@@ -253,7 +255,11 @@ const UCUpload = () => {
   );
 
   return (
-    <div className="p-6 space-y-6 bg-gradient-to-br from-green-50 to-blue-100 min-h-screen">
+    <SidebarProvider>
+      <div className="min-h-screen flex w-full bg-gradient-to-br from-green-50 to-blue-100">
+        <Sidebar />
+        <SidebarInset>
+          <div className="flex-1 ml-64 p-6 space-y-6">
       <div className="flex items-center space-x-4">
         <Button variant="ghost" onClick={() => navigate('/')}>
           <ArrowLeft className="w-4 h-4 mr-2" />
@@ -451,7 +457,10 @@ const UCUpload = () => {
           </Button>
         </div>
       </form>
-    </div>
+          </div>
+        </SidebarInset>
+      </div>
+    </SidebarProvider>
   );
 };
 

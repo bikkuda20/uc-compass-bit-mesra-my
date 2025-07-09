@@ -38,6 +38,7 @@ function App() {
             <Route path="/years" element={<Years />} />
             <Route path="/investigators" element={<Investigators />} />
             <Route path="/user-management" element={<UserManagement />} />
+            <Route path="/users" element={<UserManagement />} />
             <Route path="/settings" element={<Settings />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
