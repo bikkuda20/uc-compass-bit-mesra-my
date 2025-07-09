@@ -35,6 +35,7 @@ const UserManagement = () => {
     full_name: "",
     role: "user",
     is_active: true,
+    password: "",
   });
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -125,18 +126,41 @@ const UserManagement = () => {
           description: "User updated successfully",
         });
       } else {
-        // Create new user
-        const { error } = await supabase
+        // Create new user - first create auth user, then profile
+        if (!formData.password) {
+          throw new Error("Password is required for new users");
+        }
+
+        // Create auth user
+        const { data: authData, error: authError } = await supabase.auth.signUp({
+          email: formData.email,
+          password: formData.password,
+          options: {
+            emailRedirectTo: `${window.location.origin}/`,
+          }
+        });
+
+        if (authError) {
+          throw authError;
+        }
+
+        if (!authData.user) {
+          throw new Error("Failed to create user");
+        }
+
+        // Create profile in public.users table
+        const { error: profileError } = await supabase
           .from('users')
           .insert([{
+            id: authData.user.id,
             email: formData.email,
             full_name: formData.full_name,
             role: formData.role,
             is_active: formData.is_active,
           }]);
 
-        if (error) {
-          throw error;
+        if (profileError) {
+          throw profileError;
         }
 
         toast({
@@ -152,6 +176,7 @@ const UserManagement = () => {
         full_name: "",
         role: "user",
         is_active: true,
+        password: "",
       });
       
       // Refresh the users list
@@ -173,6 +198,7 @@ const UserManagement = () => {
       full_name: user.full_name || "",
       role: user.role,
       is_active: user.is_active,
+      password: "", // Don't populate password for editing
     });
     setIsDialogOpen(true);
   };
@@ -294,6 +320,19 @@ const UserManagement = () => {
                           onChange={(e) => setFormData({...formData, full_name: e.target.value})}
                         />
                       </div>
+                      {!editingUser && (
+                        <div>
+                          <Label htmlFor="password">Password *</Label>
+                          <Input
+                            id="password"
+                            type="password"
+                            value={formData.password}
+                            onChange={(e) => setFormData({...formData, password: e.target.value})}
+                            required
+                            placeholder="Enter password for new user"
+                          />
+                        </div>
+                      )}
                       <div>
                         <Label htmlFor="role">Role *</Label>
                         <Select 
