@@ -161,6 +161,11 @@ const UserManagement = () => {
           title: "Success",
           description: "User created successfully",
         });
+
+        // Wait a moment for the trigger to complete, then refresh
+        setTimeout(() => {
+          fetchUsers();
+        }, 1000);
       }
 
       setIsDialogOpen(false);
@@ -172,9 +177,6 @@ const UserManagement = () => {
         is_active: true,
         password: "",
       });
-      
-      // Refresh the users list
-      fetchUsers();
     } catch (error: any) {
       console.error('Error saving user:', error);
       toast({
