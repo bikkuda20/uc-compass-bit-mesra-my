@@ -1,4 +1,4 @@
-import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
+import { SidebarProvider, SidebarTrigger, SidebarInset } from "@/components/ui/sidebar";
 import { Sidebar } from "@/components/Sidebar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Settings as SettingsIcon, Database, Upload, Shield } from "lucide-react";
@@ -8,9 +8,9 @@ const Settings = () => {
     <SidebarProvider>
       <div className="min-h-screen w-full flex">
         <Sidebar />
-        <div className="flex-1 flex flex-col min-w-0">
+        <SidebarInset>
           <header className="sticky top-0 z-40 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-            <div className="container flex h-14 items-center px-4">
+            <div className="flex h-14 items-center px-6">
               <SidebarTrigger className="-ml-1" />
               <div className="ml-4">
                 <h1 className="text-xl font-semibold">Settings</h1>
@@ -19,7 +19,7 @@ const Settings = () => {
           </header>
           
           <main className="flex-1 overflow-auto">
-            <div className="container py-6 px-4">
+            <div className="p-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-6xl">
                 {/* System Information */}
                 <Card>
@@ -119,7 +119,7 @@ const Settings = () => {
               </div>
             </div>
           </main>
-        </div>
+        </SidebarInset>
       </div>
     </SidebarProvider>
   );
