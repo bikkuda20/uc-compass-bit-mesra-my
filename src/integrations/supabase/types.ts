@@ -285,7 +285,7 @@ export type Database = {
     }
     Functions: {
       is_admin: {
-        Args: { user_email: string }
+        Args: { user_email?: string }
         Returns: boolean
       }
     }

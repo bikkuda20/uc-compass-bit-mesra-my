@@ -6,19 +6,21 @@ import { Settings as SettingsIcon, Database, Upload, Shield } from "lucide-react
 const Settings = () => {
   return (
     <SidebarProvider>
-      <div className="min-h-screen flex w-full">
+      <div className="min-h-screen w-full flex">
         <Sidebar />
-        <div className="flex-1 flex flex-col">
-          <header className="h-12 flex items-center border-b px-6">
-            <SidebarTrigger />
-          </header>
-          <main className="flex-1 p-6">
-            <div className="space-y-6">
-              <div>
-                <h2 className="text-2xl font-bold text-slate-800">Settings</h2>
+        <div className="flex-1 flex flex-col min-w-0">
+          <header className="sticky top-0 z-40 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+            <div className="container flex h-14 items-center px-4">
+              <SidebarTrigger className="-ml-1" />
+              <div className="ml-4">
+                <h1 className="text-xl font-semibold">Settings</h1>
               </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            </div>
+          </header>
+          
+          <main className="flex-1 overflow-auto">
+            <div className="container py-6 px-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-6xl">
                 {/* System Information */}
                 <Card>
                   <CardHeader>
