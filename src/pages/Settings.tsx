@@ -9,18 +9,19 @@ const Settings = () => {
       <div className="min-h-screen w-full flex">
         <Sidebar />
         <SidebarInset>
-          <header className="sticky top-0 z-40 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-            <div className="flex h-14 items-center px-6">
-              <SidebarTrigger className="-ml-1" />
-              <div className="ml-4">
-                <h1 className="text-xl font-semibold">Settings</h1>
+          <div className="flex-1 ml-64">
+            <header className="sticky top-0 z-40 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+              <div className="flex h-14 items-center px-6">
+                <SidebarTrigger className="-ml-1" />
+                <div className="ml-4">
+                  <h1 className="text-xl font-semibold">Settings</h1>
+                </div>
               </div>
-            </div>
-          </header>
-          
-          <main className="flex-1 overflow-auto">
-            <div className="p-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-6xl">
+            </header>
+            
+            <main className="flex-1 overflow-auto">
+              <div className="p-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-6xl">
                 {/* System Information */}
                 <Card>
                   <CardHeader>
@@ -116,9 +117,10 @@ const Settings = () => {
                     </div>
                   </CardContent>
                 </Card>
+                </div>
               </div>
-            </div>
-          </main>
+            </main>
+          </div>
         </SidebarInset>
       </div>
     </SidebarProvider>
