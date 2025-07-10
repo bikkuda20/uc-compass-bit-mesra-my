@@ -9,14 +9,15 @@ const Settings = () => {
     <SidebarProvider>
       <div className="min-h-screen flex w-full">
         <Sidebar />
-        <main className="flex-1">
-          <div className="p-6 space-y-6">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-4">
-                <SidebarTrigger />
+        <div className="flex-1 flex flex-col">
+          <header className="h-12 flex items-center border-b px-6">
+            <SidebarTrigger />
+          </header>
+          <main className="flex-1 p-6">
+            <div className="space-y-6">
+              <div>
                 <h2 className="text-2xl font-bold text-slate-800">Settings</h2>
               </div>
-            </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {/* System Information */}
@@ -114,9 +115,10 @@ const Settings = () => {
                   </div>
                 </CardContent>
               </Card>
+              </div>
             </div>
-          </div>
-        </main>
+          </main>
+        </div>
       </div>
     </SidebarProvider>
   );

@@ -126,14 +126,14 @@ const UserManagement = () => {
           description: "User updated successfully",
         });
       } else {
-        // Create new user - first create auth user, then profile
+        // Create new user - the trigger will automatically create the profile
         if (!formData.password) {
           throw new Error("Password is required for new users");
         }
 
         console.log('Creating new user with email:', formData.email);
 
-        // Create auth user using regular signUp
+        // Create auth user - trigger will handle profile creation
         const { data: authData, error: authError } = await supabase.auth.signUp({
           email: formData.email,
           password: formData.password,
@@ -141,7 +141,8 @@ const UserManagement = () => {
             data: {
               full_name: formData.full_name,
               role: formData.role,
-            }
+            },
+            emailRedirectTo: `${window.location.origin}/`
           }
         });
 
@@ -155,24 +156,6 @@ const UserManagement = () => {
         }
 
         console.log('Auth user created:', authData.user.id);
-
-        // Create profile in public.users table using the auth user's ID
-        const { error: profileError } = await supabase
-          .from('users')
-          .insert([{
-            id: authData.user.id,
-            email: formData.email,
-            full_name: formData.full_name,
-            role: formData.role,
-            is_active: formData.is_active,
-          }]);
-
-        if (profileError) {
-          console.error('Profile creation error:', profileError);
-          throw profileError;
-        }
-
-        console.log('Profile created successfully');
 
         toast({
           title: "Success",
