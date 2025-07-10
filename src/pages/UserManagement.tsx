@@ -132,16 +132,17 @@ const UserManagement = () => {
         }
 
         console.log('Creating new user with email:', formData.email);
-        
-        // Check current user before creating
-        const { data: currentUser } = await supabase.auth.getUser();
-        console.log('Current user before signup:', currentUser);
 
-        // Create auth user with admin privileges (bypassing auto-signin)
-        const { data: authData, error: authError } = await supabase.auth.admin.createUser({
+        // Create auth user using regular signUp
+        const { data: authData, error: authError } = await supabase.auth.signUp({
           email: formData.email,
           password: formData.password,
-          email_confirm: true, // Auto-confirm email to avoid verification step
+          options: {
+            data: {
+              full_name: formData.full_name,
+              role: formData.role,
+            }
+          }
         });
 
         if (authError) {
