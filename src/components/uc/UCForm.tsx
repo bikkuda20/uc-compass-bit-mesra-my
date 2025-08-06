@@ -161,8 +161,10 @@ const UCForm = ({ uc, onComplete, onCancel }: UCFormProps) => {
   const statuses = ["Pending", "Submitted", "Verified"];
   const projectTypes = ["Project", "Workshop", "Seminar", "Symposium", "Conference"];
 
+  console.log("UCForm is rendering with new layout!");
+  
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 p-6">
+    <div className="min-h-screen bg-red-500 p-6" style={{backgroundColor: 'red'}}>
       <div className="max-w-7xl mx-auto space-y-8">
         {/* Header Section */}
         <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
