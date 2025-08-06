@@ -5,10 +5,11 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Building, Calendar, User, FileText, Workflow, Save, X } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useFundingAgencies, useFinancialYears, usePrincipalInvestigators } from "@/hooks/useSupabaseData";
+import { Separator } from "@/components/ui/separator";
 
 interface UCFormProps {
   uc?: any;
@@ -161,242 +162,337 @@ const UCForm = ({ uc, onComplete, onCancel }: UCFormProps) => {
   const projectTypes = ["Project", "Workshop", "Seminar", "Symposium", "Conference"];
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center space-x-4">
-        <Button variant="ghost" onClick={onCancel}>
-          <ArrowLeft className="w-4 h-4 mr-2" />
-          Back to List
-        </Button>
-        <h2 className="text-2xl font-bold text-slate-800">
-          {uc ? "Edit UC Tracker" : "New UC Tracker"}
-        </h2>
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 p-6">
+      <div className="max-w-7xl mx-auto space-y-8">
+        {/* Header Section */}
+        <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-4">
+              <Button variant="ghost" onClick={onCancel} className="flex items-center space-x-2">
+                <ArrowLeft className="w-4 h-4" />
+                <span>Back to List</span>
+              </Button>
+              <Separator orientation="vertical" className="h-6" />
+              <div>
+                <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
+                  {uc ? "Edit UC Tracker" : "Create New UC Tracker"}
+                </h1>
+                <p className="text-slate-600 mt-1">
+                  {uc ? "Update existing UC entry details" : "Add a new UC entry to the tracking system"}
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <form onSubmit={handleSubmit} className="space-y-8">
+          <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
+            {/* Project Details Card */}
+            <Card className="shadow-lg border-0 bg-white/70 backdrop-blur-sm">
+              <CardHeader className="pb-6">
+                <div className="flex items-center space-x-3">
+                  <div className="p-2 bg-blue-100 rounded-lg">
+                    <FileText className="w-5 h-5 text-blue-600" />
+                  </div>
+                  <div>
+                    <CardTitle className="text-xl text-slate-800">Project Details</CardTitle>
+                    <p className="text-sm text-slate-600 mt-1">Basic project information and identifiers</p>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="space-y-2">
+                    <Label htmlFor="fundingAgency" className="text-sm font-semibold text-slate-700 flex items-center space-x-2">
+                      <Building className="w-4 h-4" />
+                      <span>Funding Agency *</span>
+                    </Label>
+                    <Select 
+                      value={formData.fundingAgencyId} 
+                      onValueChange={(value) => handleInputChange("fundingAgencyId", value)}
+                    >
+                      <SelectTrigger className="h-12 bg-white border-slate-300 focus:border-blue-500 transition-colors">
+                        <SelectValue placeholder="Select funding agency" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {agencies.map((agency) => (
+                          <SelectItem key={agency.id} value={agency.id}>
+                            {agency.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="financialYear" className="text-sm font-semibold text-slate-700 flex items-center space-x-2">
+                      <Calendar className="w-4 h-4" />
+                      <span>Financial Year *</span>
+                    </Label>
+                    <Select 
+                      value={formData.financialYearId} 
+                      onValueChange={(value) => handleInputChange("financialYearId", value)}
+                    >
+                      <SelectTrigger className="h-12 bg-white border-slate-300 focus:border-blue-500 transition-colors">
+                        <SelectValue placeholder="Select financial year" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {years.map((year) => (
+                          <SelectItem key={year.id} value={year.id}>
+                            {year.year}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="piName" className="text-sm font-semibold text-slate-700 flex items-center space-x-2">
+                    <User className="w-4 h-4" />
+                    <span>Principal Investigator *</span>
+                  </Label>
+                  <Select 
+                    value={formData.piId} 
+                    onValueChange={(value) => handleInputChange("piId", value)}
+                  >
+                    <SelectTrigger className="h-12 bg-white border-slate-300 focus:border-blue-500 transition-colors">
+                      <SelectValue placeholder="Select Principal Investigator" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {pis.map((pi) => (
+                        <SelectItem key={pi.id} value={pi.id}>
+                          {pi.name} {pi.department && `(${pi.department})`}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="space-y-2">
+                    <Label htmlFor="projectCode" className="text-sm font-semibold text-slate-700">
+                      Project Code *
+                    </Label>
+                    <Input
+                      id="projectCode"
+                      value={formData.projectCode}
+                      onChange={(e) => handleInputChange("projectCode", e.target.value)}
+                      placeholder="Enter project code"
+                      className="h-12 bg-white border-slate-300 focus:border-blue-500 transition-colors"
+                      required
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="ucEntryNo" className="text-sm font-semibold text-slate-700">
+                      UC Entry No
+                    </Label>
+                    <Input
+                      id="ucEntryNo"
+                      value={formData.ucEntryNo}
+                      onChange={(e) => handleInputChange("ucEntryNo", e.target.value)}
+                      placeholder="Enter UC entry number"
+                      className="h-12 bg-white border-slate-300 focus:border-blue-500 transition-colors"
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="projectTitle" className="text-sm font-semibold text-slate-700">
+                    Project Title
+                  </Label>
+                  <Input
+                    id="projectTitle"
+                    value={formData.projectTitle}
+                    onChange={(e) => handleInputChange("projectTitle", e.target.value)}
+                    placeholder="Enter project title"
+                    className="h-12 bg-white border-slate-300 focus:border-blue-500 transition-colors"
+                  />
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="space-y-2">
+                    <Label htmlFor="projectType" className="text-sm font-semibold text-slate-700">
+                      Project Type
+                    </Label>
+                    <Select 
+                      value={formData.projectType} 
+                      onValueChange={(value) => handleInputChange("projectType", value)}
+                    >
+                      <SelectTrigger className="h-12 bg-white border-slate-300 focus:border-blue-500 transition-colors">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {projectTypes.map((type) => (
+                          <SelectItem key={type} value={type}>
+                            {type}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="status" className="text-sm font-semibold text-slate-700">
+                      Status
+                    </Label>
+                    <Select 
+                      value={formData.status} 
+                      onValueChange={(value) => handleInputChange("status", value)}
+                    >
+                      <SelectTrigger className="h-12 bg-white border-slate-300 focus:border-blue-500 transition-colors">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {statuses.map((status) => (
+                          <SelectItem key={status} value={status}>
+                            {status}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* UC Workflow Tracking Card */}
+            <Card className="shadow-lg border-0 bg-white/70 backdrop-blur-sm">
+              <CardHeader className="pb-6">
+                <div className="flex items-center space-x-3">
+                  <div className="p-2 bg-green-100 rounded-lg">
+                    <Workflow className="w-5 h-5 text-green-600" />
+                  </div>
+                  <div>
+                    <CardTitle className="text-xl text-slate-800">UC Workflow Tracking</CardTitle>
+                    <p className="text-sm text-slate-600 mt-1">Track the progress through different stages</p>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div className="space-y-6">
+                  <div className="space-y-2">
+                    <Label htmlFor="ucReceivedDate" className="text-sm font-semibold text-slate-700">
+                      1. UC Received Date by PI
+                    </Label>
+                    <Input
+                      id="ucReceivedDate"
+                      type="date"
+                      value={formData.ucReceivedDate}
+                      onChange={(e) => handleInputChange("ucReceivedDate", e.target.value)}
+                      className="h-12 bg-white border-slate-300 focus:border-blue-500 transition-colors"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="ucVerifiedDate" className="text-sm font-semibold text-slate-700">
+                      2. UC Verified by Related Person
+                    </Label>
+                    <Input
+                      id="ucVerifiedDate"
+                      type="date"
+                      value={formData.ucVerifiedDate}
+                      onChange={(e) => handleInputChange("ucVerifiedDate", e.target.value)}
+                      className="h-12 bg-white border-slate-300 focus:border-blue-500 transition-colors"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="ucCheckedArFinanceDate" className="text-sm font-semibold text-slate-700">
+                      3. UC Checked by AR Finance
+                    </Label>
+                    <Input
+                      id="ucCheckedArFinanceDate"
+                      type="date"
+                      value={formData.ucCheckedArFinanceDate}
+                      onChange={(e) => handleInputChange("ucCheckedArFinanceDate", e.target.value)}
+                      className="h-12 bg-white border-slate-300 focus:border-blue-500 transition-colors"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="ucSentDeputyComptrollerDate" className="text-sm font-semibold text-slate-700">
+                      4. UC Sent to Deputy Comptroller
+                    </Label>
+                    <Input
+                      id="ucSentDeputyComptrollerDate"
+                      type="date"
+                      value={formData.ucSentDeputyComptrollerDate}
+                      onChange={(e) => handleInputChange("ucSentDeputyComptrollerDate", e.target.value)}
+                      className="h-12 bg-white border-slate-300 focus:border-blue-500 transition-colors"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="ucSentRegistrarDate" className="text-sm font-semibold text-slate-700">
+                      5. UC Sent to Registrar Office
+                    </Label>
+                    <Input
+                      id="ucSentRegistrarDate"
+                      type="date"
+                      value={formData.ucSentRegistrarDate}
+                      onChange={(e) => handleInputChange("ucSentRegistrarDate", e.target.value)}
+                      className="h-12 bg-white border-slate-300 focus:border-blue-500 transition-colors"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="ucReturnedRegistrarDate" className="text-sm font-semibold text-slate-700">
+                      6. UC Returned from Registrar
+                    </Label>
+                    <Input
+                      id="ucReturnedRegistrarDate"
+                      type="date"
+                      value={formData.ucReturnedRegistrarDate}
+                      onChange={(e) => handleInputChange("ucReturnedRegistrarDate", e.target.value)}
+                      className="h-12 bg-white border-slate-300 focus:border-blue-500 transition-colors"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="ucHandedOverPiDate" className="text-sm font-semibold text-slate-700">
+                      7. UC Handed Over to PI
+                    </Label>
+                    <Input
+                      id="ucHandedOverPiDate"
+                      type="date"
+                      value={formData.ucHandedOverPiDate}
+                      onChange={(e) => handleInputChange("ucHandedOverPiDate", e.target.value)}
+                      className="h-12 bg-white border-slate-300 focus:border-blue-500 transition-colors"
+                    />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Action Buttons */}
+          <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+            <div className="flex justify-end space-x-4">
+              <Button 
+                type="button" 
+                variant="outline" 
+                onClick={onCancel}
+                className="h-12 px-8 border-slate-300 text-slate-700 hover:bg-slate-50 transition-colors flex items-center space-x-2"
+              >
+                <X className="w-4 h-4" />
+                <span>Cancel</span>
+              </Button>
+              <Button 
+                type="submit" 
+                disabled={isSubmitting} 
+                className="h-12 px-8 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white transition-all flex items-center space-x-2 shadow-lg"
+              >
+                <Save className="w-4 h-4" />
+                <span>
+                  {isSubmitting ? "Saving..." : uc ? "Update UC Tracker" : "Create UC Tracker"}
+                </span>
+              </Button>
+            </div>
+          </div>
+        </form>
       </div>
-
-      <form onSubmit={handleSubmit} className="space-y-6">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {/* Basic Information */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Basic Information</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div>
-                <Label htmlFor="fundingAgency">Funding Agency *</Label>
-                <Select 
-                  value={formData.fundingAgencyId} 
-                  onValueChange={(value) => handleInputChange("fundingAgencyId", value)}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select funding agency" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {agencies.map((agency) => (
-                      <SelectItem key={agency.id} value={agency.id}>
-                        {agency.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div>
-                <Label htmlFor="financialYear">Financial Year *</Label>
-                <Select 
-                  value={formData.financialYearId} 
-                  onValueChange={(value) => handleInputChange("financialYearId", value)}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select financial year" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {years.map((year) => (
-                      <SelectItem key={year.id} value={year.id}>
-                        {year.year}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div>
-                <Label htmlFor="piName">Principal Investigator *</Label>
-                <Select 
-                  value={formData.piId} 
-                  onValueChange={(value) => handleInputChange("piId", value)}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select PI" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {pis.map((pi) => (
-                      <SelectItem key={pi.id} value={pi.id}>
-                        {pi.name} {pi.department && `(${pi.department})`}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div>
-                <Label htmlFor="projectCode">Project Code *</Label>
-                <Input
-                  id="projectCode"
-                  value={formData.projectCode}
-                  onChange={(e) => handleInputChange("projectCode", e.target.value)}
-                  placeholder="Enter project code"
-                  required
-                />
-              </div>
-
-              <div>
-                <Label htmlFor="projectTitle">Project Title</Label>
-                <Input
-                  id="projectTitle"
-                  value={formData.projectTitle}
-                  onChange={(e) => handleInputChange("projectTitle", e.target.value)}
-                  placeholder="Enter project title"
-                />
-              </div>
-
-              <div>
-                <Label htmlFor="ucEntryNo">UC Entry No</Label>
-                <Input
-                  id="ucEntryNo"
-                  value={formData.ucEntryNo}
-                  onChange={(e) => handleInputChange("ucEntryNo", e.target.value)}
-                  placeholder="Enter UC entry number"
-                />
-              </div>
-
-              <div>
-                <Label htmlFor="projectType">Project Type</Label>
-                <Select 
-                  value={formData.projectType} 
-                  onValueChange={(value) => handleInputChange("projectType", value)}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {projectTypes.map((type) => (
-                      <SelectItem key={type} value={type}>
-                        {type}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div>
-                <Label htmlFor="status">Status</Label>
-                <Select 
-                  value={formData.status} 
-                  onValueChange={(value) => handleInputChange("status", value)}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {statuses.map((status) => (
-                      <SelectItem key={status} value={status}>
-                        {status}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* UC Workflow Tracking */}
-          <Card>
-            <CardHeader>
-              <CardTitle>UC Workflow Tracking</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div>
-                <Label htmlFor="ucReceivedDate">1. UC Received Date by PI</Label>
-                <Input
-                  id="ucReceivedDate"
-                  type="date"
-                  value={formData.ucReceivedDate}
-                  onChange={(e) => handleInputChange("ucReceivedDate", e.target.value)}
-                />
-              </div>
-
-              <div>
-                <Label htmlFor="ucVerifiedDate">2. UC Verified by Related Person</Label>
-                <Input
-                  id="ucVerifiedDate"
-                  type="date"
-                  value={formData.ucVerifiedDate}
-                  onChange={(e) => handleInputChange("ucVerifiedDate", e.target.value)}
-                />
-              </div>
-
-              <div>
-                <Label htmlFor="ucCheckedArFinanceDate">3. UC Checked by AR Finance</Label>
-                <Input
-                  id="ucCheckedArFinanceDate"
-                  type="date"
-                  value={formData.ucCheckedArFinanceDate}
-                  onChange={(e) => handleInputChange("ucCheckedArFinanceDate", e.target.value)}
-                />
-              </div>
-
-              <div>
-                <Label htmlFor="ucSentDeputyComptrollerDate">4. UC Sent to Deputy Comptroller</Label>
-                <Input
-                  id="ucSentDeputyComptrollerDate"
-                  type="date"
-                  value={formData.ucSentDeputyComptrollerDate}
-                  onChange={(e) => handleInputChange("ucSentDeputyComptrollerDate", e.target.value)}
-                />
-              </div>
-
-              <div>
-                <Label htmlFor="ucSentRegistrarDate">5. UC Sent to Registrar Office</Label>
-                <Input
-                  id="ucSentRegistrarDate"
-                  type="date"
-                  value={formData.ucSentRegistrarDate}
-                  onChange={(e) => handleInputChange("ucSentRegistrarDate", e.target.value)}
-                />
-              </div>
-
-              <div>
-                <Label htmlFor="ucReturnedRegistrarDate">6. UC Returned from Registrar</Label>
-                <Input
-                  id="ucReturnedRegistrarDate"
-                  type="date"
-                  value={formData.ucReturnedRegistrarDate}
-                  onChange={(e) => handleInputChange("ucReturnedRegistrarDate", e.target.value)}
-                />
-              </div>
-
-              <div>
-                <Label htmlFor="ucHandedOverPiDate">7. UC Handed Over to PI</Label>
-                <Input
-                  id="ucHandedOverPiDate"
-                  type="date"
-                  value={formData.ucHandedOverPiDate}
-                  onChange={(e) => handleInputChange("ucHandedOverPiDate", e.target.value)}
-                />
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Submit Buttons */}
-        <div className="flex justify-end space-x-4">
-          <Button type="button" variant="outline" onClick={onCancel}>
-            Cancel
-          </Button>
-          <Button type="submit" disabled={isSubmitting} className="bg-blue-600 hover:bg-blue-700">
-            {isSubmitting ? "Saving..." : uc ? "Update UC Tracker" : "Create UC Tracker"}
-          </Button>
-        </div>
-      </form>
     </div>
   );
 };
