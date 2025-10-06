@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -20,18 +19,23 @@ const UCEditForm = ({ ucId, onComplete, onCancel }: UCEditFormProps) => {
   const { agencies } = useFundingAgencies();
   const { years } = useFinancialYears();
   const { pis } = usePrincipalInvestigators();
-  
+  const { toast } = useToast();
+
   const [formData, setFormData] = useState({
     fundingAgencyId: "",
     schemeId: "",
     financialYearId: "",
     piId: "",
+    projectTitle: "",
     projectCode: "",
     ucEntryNo: "",
     projectType: "Project",
     status: "Pending",
-    
-    // Workflow tracking fields
+
+    recurringBalance: "",
+    nonRecurringBalance: "",
+    totalBalance: "",
+
     ucReceivedDate: "",
     ucVerifiedDate: "",
     ucCheckedArFinanceDate: "",
@@ -43,9 +47,7 @@ const UCEditForm = ({ ucId, onComplete, onCancel }: UCEditFormProps) => {
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [loading, setLoading] = useState(true);
-  const { toast } = useToast();
-  
-  // Get schemes based on selected funding agency
+
   const { schemes } = useSchemes(formData.fundingAgencyId);
 
   useEffect(() => {
@@ -53,13 +55,7 @@ const UCEditForm = ({ ucId, onComplete, onCancel }: UCEditFormProps) => {
       try {
         const { data, error } = await supabase
           .from('uc_entries')
-          .select(`
-            *,
-            funding_agency:funding_agencies(id, name),
-            financial_year:financial_years(id, year),  
-            principal_investigator:principal_investigators(id, name, email, department),
-            scheme:schemes(id, name, description)
-          `)
+          .select('*')
           .eq('id', ucId)
           .single();
 
@@ -68,6 +64,7 @@ const UCEditForm = ({ ucId, onComplete, onCancel }: UCEditFormProps) => {
         if (data) {
           setFormData({
             fundingAgencyId: data.funding_agency_id || "",
+            projectTitle: data.project_title || "",
             schemeId: data.scheme_id || "",
             financialYearId: data.financial_year_id || "",
             piId: data.pi_id || "",
@@ -75,8 +72,14 @@ const UCEditForm = ({ ucId, onComplete, onCancel }: UCEditFormProps) => {
             ucEntryNo: data.uc_entry_no || "",
             projectType: data.project_type || "Project",
             status: data.status || "Pending",
-            
-            // Workflow tracking fields
+
+            recurringBalance: data.recurring_balance?.toString() || "",
+            nonRecurringBalance: data.non_recurring_balance?.toString() || "",
+            totalBalance: (
+              (parseFloat(data.recurring_balance) || 0) +
+              (parseFloat(data.non_recurring_balance) || 0)
+            ).toFixed(2),
+
             ucReceivedDate: data.uc_received_date || "",
             ucVerifiedDate: data.uc_verified_date || "",
             ucCheckedArFinanceDate: data.uc_checked_ar_finance_date || "",
@@ -87,7 +90,6 @@ const UCEditForm = ({ ucId, onComplete, onCancel }: UCEditFormProps) => {
           });
         }
       } catch (error) {
-        console.error('Error fetching UC entry:', error);
         toast({
           title: "Error",
           description: "Failed to load UC entry details",
@@ -99,21 +101,29 @@ const UCEditForm = ({ ucId, onComplete, onCancel }: UCEditFormProps) => {
     };
 
     fetchUCEntry();
-  }, [ucId, toast]);
+  }, [ucId]);
 
   const handleInputChange = (field: string, value: string) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
-    
-    // Reset scheme when funding agency changes
-    if (field === "fundingAgencyId") {
-      setFormData(prev => ({ ...prev, schemeId: "" }));
-    }
+    setFormData(prev => {
+      const updated = { ...prev, [field]: value };
+
+      if (field === "recurringBalance" || field === "nonRecurringBalance") {
+        const recurring = parseFloat(field === "recurringBalance" ? value : updated.recurringBalance) || 0;
+        const nonRecurring = parseFloat(field === "nonRecurringBalance" ? value : updated.nonRecurringBalance) || 0;
+        updated.totalBalance = (recurring + nonRecurring).toFixed(2);
+      }
+
+      if (field === "fundingAgencyId") {
+        updated.schemeId = "";
+      }
+
+      return updated;
+    });
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    // Validation
+
     if (!formData.fundingAgencyId || !formData.financialYearId || !formData.piId || !formData.projectCode) {
       toast({
         title: "Validation Error",
@@ -128,6 +138,7 @@ const UCEditForm = ({ ucId, onComplete, onCancel }: UCEditFormProps) => {
     try {
       const ucData = {
         funding_agency_id: formData.fundingAgencyId,
+        project_title: formData.projectTitle || null,
         scheme_id: formData.schemeId || null,
         financial_year_id: formData.financialYearId,
         pi_id: formData.piId,
@@ -135,8 +146,13 @@ const UCEditForm = ({ ucId, onComplete, onCancel }: UCEditFormProps) => {
         uc_entry_no: formData.ucEntryNo || null,
         project_type: formData.projectType,
         status: formData.status,
-        
-        // Workflow tracking fields
+
+        recurring_balance: parseFloat(formData.recurringBalance) || 0,
+        non_recurring_balance: parseFloat(formData.nonRecurringBalance) || 0,
+        total_balance:
+          (parseFloat(formData.recurringBalance) || 0) +
+          (parseFloat(formData.nonRecurringBalance) || 0),
+
         uc_received_date: formData.ucReceivedDate || null,
         uc_verified_date: formData.ucVerifiedDate || null,
         uc_checked_ar_finance_date: formData.ucCheckedArFinanceDate || null,
@@ -144,7 +160,7 @@ const UCEditForm = ({ ucId, onComplete, onCancel }: UCEditFormProps) => {
         uc_sent_registrar_date: formData.ucSentRegistrarDate || null,
         uc_returned_registrar_date: formData.ucReturnedRegistrarDate || null,
         uc_handed_over_pi_date: formData.ucHandedOverPiDate || null,
-        
+
         updated_at: new Date().toISOString(),
       };
 
@@ -159,10 +175,9 @@ const UCEditForm = ({ ucId, onComplete, onCancel }: UCEditFormProps) => {
         title: "Success",
         description: "UC entry updated successfully",
       });
-      
+
       onComplete();
     } catch (error) {
-      console.error('Error updating UC entry:', error);
       toast({
         title: "Error",
         description: "Failed to update UC entry",
@@ -172,9 +187,6 @@ const UCEditForm = ({ ucId, onComplete, onCancel }: UCEditFormProps) => {
       setIsSubmitting(false);
     }
   };
-
-  const statuses = ["Pending", "Submitted", "Verified"];
-  const projectTypes = ["Project", "Workshop", "Seminar", "Symposium", "Conference"];
 
   if (loading) {
     return (
@@ -197,237 +209,122 @@ const UCEditForm = ({ ucId, onComplete, onCancel }: UCEditFormProps) => {
 
       <form onSubmit={handleSubmit} className="space-y-6">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {/* Basic Information */}
+
           <Card>
             <CardHeader>
               <CardTitle>Basic Information</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
+
               <div>
-                <Label htmlFor="fundingAgency">Funding Agency *</Label>
-                <Select 
-                  value={formData.fundingAgencyId} 
-                  onValueChange={(value) => handleInputChange("fundingAgencyId", value)}
-                >
+                <Label>Funding Agency *</Label>
+                <Select value={formData.fundingAgencyId} onValueChange={v => handleInputChange("fundingAgencyId", v)}>
                   <SelectTrigger>
                     <SelectValue placeholder="Select funding agency" />
                   </SelectTrigger>
                   <SelectContent>
-                    {agencies.map((agency) => (
-                      <SelectItem key={agency.id} value={agency.id}>
-                        {agency.name}
-                      </SelectItem>
+                    {agencies.map(agency => (
+                      <SelectItem key={agency.id} value={agency.id}>{agency.name}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
               </div>
 
               <div>
-                <Label htmlFor="scheme">Scheme</Label>
-                <Select 
-                  value={formData.schemeId} 
-                  onValueChange={(value) => handleInputChange("schemeId", value)}
-                  disabled={!formData.fundingAgencyId}
-                >
+                <Label>Project Title</Label>
+                <Input value={formData.projectTitle} onChange={e => handleInputChange("projectTitle", e.target.value)} />
+              </div>
+
+
+              <div>
+                <Label>Scheme</Label>
+                <Select value={formData.schemeId} onValueChange={v => handleInputChange("schemeId", v)} disabled={!formData.fundingAgencyId}>
                   <SelectTrigger>
-                    <SelectValue placeholder="Select scheme (optional)" />
+                    <SelectValue placeholder="Select scheme" />
                   </SelectTrigger>
                   <SelectContent>
-                    {schemes.map((scheme) => (
-                      <SelectItem key={scheme.id} value={scheme.id}>
-                        {scheme.name}
-                      </SelectItem>
+                    {schemes.map(s => (
+                      <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
               </div>
 
               <div>
-                <Label htmlFor="financialYear">Financial Year *</Label>
-                <Select 
-                  value={formData.financialYearId} 
-                  onValueChange={(value) => handleInputChange("financialYearId", value)}
-                >
+                <Label>Financial Year *</Label>
+                <Select value={formData.financialYearId} onValueChange={v => handleInputChange("financialYearId", v)}>
                   <SelectTrigger>
                     <SelectValue placeholder="Select financial year" />
                   </SelectTrigger>
                   <SelectContent>
-                    {years.map((year) => (
-                      <SelectItem key={year.id} value={year.id}>
-                        {year.year}
-                      </SelectItem>
+                    {years.map(y => (
+                      <SelectItem key={y.id} value={y.id}>{y.year}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
               </div>
 
               <div>
-                <Label htmlFor="piName">Principal Investigator *</Label>
-                <Select 
-                  value={formData.piId} 
-                  onValueChange={(value) => handleInputChange("piId", value)}
-                >
+                <Label>Principal Investigator *</Label>
+                <Select value={formData.piId} onValueChange={v => handleInputChange("piId", v)}>
                   <SelectTrigger>
                     <SelectValue placeholder="Select PI" />
                   </SelectTrigger>
                   <SelectContent>
-                    {pis.map((pi) => (
-                      <SelectItem key={pi.id} value={pi.id}>
-                        {pi.name} {pi.department && `(${pi.department})`}
-                      </SelectItem>
+                    {pis.map(pi => (
+                      <SelectItem key={pi.id} value={pi.id}>{pi.name}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
               </div>
 
               <div>
-                <Label htmlFor="projectCode">Project Code *</Label>
-                <Input
-                  id="projectCode"
-                  value={formData.projectCode}
-                  onChange={(e) => handleInputChange("projectCode", e.target.value)}
-                  placeholder="Enter project code"
-                  required
-                />
+                <Label>Project Code *</Label>
+                <Input value={formData.projectCode} onChange={e => handleInputChange("projectCode", e.target.value)} />
               </div>
 
               <div>
-                <Label htmlFor="ucEntryNo">UC Entry No</Label>
-                <Input
-                  id="ucEntryNo"
-                  value={formData.ucEntryNo}
-                  onChange={(e) => handleInputChange("ucEntryNo", e.target.value)}
-                  placeholder="Enter UC entry number"
-                />
+                <Label>UC Entry No</Label>
+                <Input value={formData.ucEntryNo} onChange={e => handleInputChange("ucEntryNo", e.target.value)} />
               </div>
 
               <div>
-                <Label htmlFor="projectType">Project Type</Label>
-                <Select 
-                  value={formData.projectType} 
-                  onValueChange={(value) => handleInputChange("projectType", value)}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {projectTypes.map((type) => (
-                      <SelectItem key={type} value={type}>
-                        {type}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <Label>Recurring Balance (₹)</Label>
+                <Input value={formData.recurringBalance} onChange={e => handleInputChange("recurringBalance", e.target.value)} />
               </div>
 
               <div>
-                <Label htmlFor="status">Status</Label>
-                <Select 
-                  value={formData.status} 
-                  onValueChange={(value) => handleInputChange("status", value)}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {statuses.map((status) => (
-                      <SelectItem key={status} value={status}>
-                        {status}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <Label>Non-Recurring Balance (₹)</Label>
+                <Input value={formData.nonRecurringBalance} onChange={e => handleInputChange("nonRecurringBalance", e.target.value)} />
               </div>
+
+              <div>
+                <Label>Total Balance (₹)</Label>
+                <Input value={formData.totalBalance} readOnly className="bg-slate-100 cursor-not-allowed" />
+              </div>
+
             </CardContent>
           </Card>
 
-          {/* UC Workflow Tracking */}
           <Card>
             <CardHeader>
               <CardTitle>UC Workflow Tracking</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div>
-                <Label htmlFor="ucReceivedDate">1. UC Received Date by PI</Label>
-                <Input
-                  id="ucReceivedDate"
-                  type="date"
-                  value={formData.ucReceivedDate}
-                  onChange={(e) => handleInputChange("ucReceivedDate", e.target.value)}
-                />
-              </div>
-
-              <div>
-                <Label htmlFor="ucVerifiedDate">2. UC Verified by Related Person</Label>
-                <Input
-                  id="ucVerifiedDate"
-                  type="date"
-                  value={formData.ucVerifiedDate}
-                  onChange={(e) => handleInputChange("ucVerifiedDate", e.target.value)}
-                />
-              </div>
-
-              <div>
-                <Label htmlFor="ucCheckedArFinanceDate">3. UC Checked by AR Finance</Label>
-                <Input
-                  id="ucCheckedArFinanceDate"
-                  type="date"
-                  value={formData.ucCheckedArFinanceDate}
-                  onChange={(e) => handleInputChange("ucCheckedArFinanceDate", e.target.value)}
-                />
-              </div>
-
-              <div>
-                <Label htmlFor="ucSentDeputyComptrollerDate">4. UC Sent to Deputy Comptroller</Label>
-                <Input
-                  id="ucSentDeputyComptrollerDate"
-                  type="date"
-                  value={formData.ucSentDeputyComptrollerDate}
-                  onChange={(e) => handleInputChange("ucSentDeputyComptrollerDate", e.target.value)}
-                />
-              </div>
-
-              <div>
-                <Label htmlFor="ucSentRegistrarDate">5. UC Sent to Registrar Office</Label>
-                <Input
-                  id="ucSentRegistrarDate"
-                  type="date"
-                  value={formData.ucSentRegistrarDate}
-                  onChange={(e) => handleInputChange("ucSentRegistrarDate", e.target.value)}
-                />
-              </div>
-
-              <div>
-                <Label htmlFor="ucReturnedRegistrarDate">6. UC Returned from Registrar</Label>
-                <Input
-                  id="ucReturnedRegistrarDate"
-                  type="date"
-                  value={formData.ucReturnedRegistrarDate}
-                  onChange={(e) => handleInputChange("ucReturnedRegistrarDate", e.target.value)}
-                />
-              </div>
-
-              <div>
-                <Label htmlFor="ucHandedOverPiDate">7. UC Handed Over to PI</Label>
-                <Input
-                  id="ucHandedOverPiDate"
-                  type="date"
-                  value={formData.ucHandedOverPiDate}
-                  onChange={(e) => handleInputChange("ucHandedOverPiDate", e.target.value)}
-                />
-              </div>
+              {["ucReceivedDate", "ucVerifiedDate", "ucCheckedArFinanceDate", "ucSentDeputyComptrollerDate", "ucSentRegistrarDate", "ucReturnedRegistrarDate", "ucHandedOverPiDate"].map(field => (
+                <div key={field}>
+                  <Label>{field.replace(/([A-Z])/g, ' $1')}</Label>
+                  <Input type="date" value={formData[field as keyof typeof formData] as string} onChange={e => handleInputChange(field, e.target.value)} />
+                </div>
+              ))}
             </CardContent>
           </Card>
+
         </div>
 
-        {/* Submit Buttons */}
         <div className="flex justify-end space-x-4">
-          <Button type="button" variant="outline" onClick={onCancel}>
-            Cancel
-          </Button>
-          <Button type="submit" disabled={isSubmitting} className="bg-blue-600 hover:bg-blue-700">
-            {isSubmitting ? "Updating..." : "Update UC Entry"}
-          </Button>
+          <Button type="button" variant="outline" onClick={onCancel}>Cancel</Button>
+          <Button type="submit" disabled={isSubmitting}>{isSubmitting ? "Updating..." : "Update UC Entry"}</Button>
         </div>
       </form>
     </div>

@@ -1,14 +1,11 @@
-
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
-import { Badge } from "@/components/ui/badge";
 import { Trash2, Edit, Users, Search, ArrowLeft } from "lucide-react";
-import { usePrincipalInvestigators } from "@/hooks/useSupabaseData";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
@@ -16,64 +13,56 @@ import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar";
 import { Sidebar } from "@/components/Sidebar";
 
 const Investigators = () => {
+  const [pis, setPis] = useState<any[]>([]);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [isEditFormOpen, setIsEditFormOpen] = useState(false);
   const [selectedPI, setSelectedPI] = useState<any>(null);
+
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [department, setDepartment] = useState("");
-  const [projectCode, setProjectCode] = useState("");
+  const [contactNumber, setContactNumber] = useState("");
+
   const [searchQuery, setSearchQuery] = useState("");
-  const { pis, loading, refetch } = usePrincipalInvestigators();
   const { toast } = useToast();
   const navigate = useNavigate();
 
-  const [filteredPIs, setFilteredPIs] = useState(pis);
+  const fetchPIs = async () => {
+    const { data, error } = await supabase
+      .from('principal_investigators')
+      .select('id, name, email, department, contact_number')
+      .order('name');
 
-  useEffect(() => {
-    setFilteredPIs(
-      pis.filter((pi) =>
-        pi.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        (pi.email && pi.email.toLowerCase().includes(searchQuery.toLowerCase())) ||
-        (pi.department && pi.department.toLowerCase().includes(searchQuery.toLowerCase())) ||
-        (pi.project_code && pi.project_code.toLowerCase().includes(searchQuery.toLowerCase()))
-      )
-    );
-  }, [searchQuery, pis]);
-
-  const handleCreate = async () => {
-    try {
-      const { error } = await supabase
-        .from('principal_investigators')
-        .insert({ name, email, department, project_code: projectCode });
-
-      if (error) {
-        console.error("Error creating PI:", error);
-        toast({
-          title: "Error",
-          description: "Failed to create principal investigator",
-          variant: "destructive",
-        });
-        return;
-      }
-
-      toast({
-        title: "Success",
-        description: "Principal investigator created successfully",
-      });
-      setIsFormOpen(false);
-      setName("");
-      setEmail("");
-      setDepartment("");
-      setProjectCode("");
-      refetch();
-    } catch (error) {
-      console.error("Error creating PI:", error);
+    if (error) {
       toast({
         title: "Error",
-        description: "Failed to create principal investigator",
+        description: "Failed to fetch investigators",
         variant: "destructive",
       });
+    } else {
+      setPis(data || []);
+    }
+  };
+
+  const handleCreate = async () => {
+    const { error } = await supabase.from('principal_investigators').insert({
+      name,
+      email,
+      department,
+      contact_number: contactNumber
+    });
+
+    if (error) {
+      toast({
+        title: "Error",
+        description: "Failed to create investigator",
+        variant: "destructive",
+      });
+    } else {
+      toast({ title: "Success", description: "Investigator created" });
+      setIsFormOpen(false);
+      clearForm();
+      fetchPIs();
     }
   };
 
@@ -82,81 +71,71 @@ const Investigators = () => {
     setName(pi.name);
     setEmail(pi.email || "");
     setDepartment(pi.department || "");
-    setProjectCode(pi.project_code || "");
+    setContactNumber(pi.contact_number || "");
     setIsEditFormOpen(true);
   };
 
   const handleUpdate = async () => {
-    if (!selectedPI) return;
+    const { error } = await supabase
+      .from('principal_investigators')
+      .update({
+        name,
+        email,
+        department,
+        contact_number: contactNumber
+      })
+      .eq('id', selectedPI.id);
 
-    try {
-      const { error } = await supabase
-        .from('principal_investigators')
-        .update({ name, email, department, project_code: projectCode })
-        .eq('id', selectedPI.id);
-
-      if (error) {
-        console.error("Error updating PI:", error);
-        toast({
-          title: "Error",
-          description: "Failed to update principal investigator",
-          variant: "destructive",
-        });
-        return;
-      }
-
-      toast({
-        title: "Success",
-        description: "Principal investigator updated successfully",
-      });
-      setIsEditFormOpen(false);
-      setSelectedPI(null);
-      setName("");
-      setEmail("");
-      setDepartment("");
-      setProjectCode("");
-      refetch();
-    } catch (error) {
-      console.error("Error updating PI:", error);
+    if (error) {
       toast({
         title: "Error",
-        description: "Failed to update principal investigator",
+        description: "Failed to update investigator",
         variant: "destructive",
       });
+    } else {
+      toast({ title: "Success", description: "Investigator updated" });
+      setIsEditFormOpen(false);
+      clearForm();
+      fetchPIs();
     }
   };
 
   const handleDelete = async (id: string) => {
-    try {
-      const { error } = await supabase
-        .from('principal_investigators')
-        .delete()
-        .eq('id', id);
+    const { error } = await supabase
+      .from('principal_investigators')
+      .delete()
+      .eq('id', id);
 
-      if (error) {
-        console.error("Error deleting PI:", error);
-        toast({
-          title: "Error",
-          description: "Failed to delete principal investigator",
-          variant: "destructive",
-        });
-        return;
-      }
-
-      toast({
-        title: "Success",
-        description: "Principal investigator deleted successfully",
-      });
-      refetch();
-    } catch (error) {
-      console.error("Error deleting PI:", error);
+    if (error) {
       toast({
         title: "Error",
-        description: "Failed to delete principal investigator",
+        description: "Failed to delete investigator",
         variant: "destructive",
       });
+    } else {
+      toast({ title: "Deleted", description: "Investigator deleted" });
+      fetchPIs();
     }
   };
+
+  const clearForm = () => {
+    setName("");
+    setEmail("");
+    setDepartment("");
+    setContactNumber("");
+    setSelectedPI(null);
+  };
+
+  useEffect(() => {
+    fetchPIs();
+  }, []);
+
+  const filteredPIs = pis.filter((pi) =>
+    pi.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    (pi.email && pi.email.toLowerCase().includes(searchQuery.toLowerCase())) ||
+    (pi.department && pi.department.toLowerCase().includes(searchQuery.toLowerCase())) ||
+    (pi.contact_number && pi.contact_number.includes(searchQuery))
+  );
 
   return (
     <SidebarProvider>
@@ -164,39 +143,32 @@ const Investigators = () => {
         <Sidebar />
         <SidebarInset>
           <div className="flex-1 ml-64 p-6 space-y-6">
+
             <div className="flex items-center justify-between mb-8">
-              <div className="flex items-center space-x-4">
-                <Button
-                  variant="outline"
-                  onClick={() => navigate('/')}
-                  className="flex items-center space-x-2"
-                >
-                  <ArrowLeft className="w-4 h-4" />
-                  <span>Back to Dashboard</span>
-                </Button>
-                <div>
-                  <h1 className="text-3xl font-bold text-gray-900">Principal Investigators</h1>
-                  <p className="text-gray-600">Manage principal investigators and their details</p>
-                </div>
+              <Button variant="outline" onClick={() => navigate('/')} className="flex items-center space-x-2">
+                <ArrowLeft className="w-4 h-4" />
+                <span>Back to Dashboard</span>
+              </Button>
+              <div>
+                <h1 className="text-3xl font-bold text-gray-900">Principal Investigators</h1>
+                <p className="text-gray-600">Manage investigators and their details</p>
               </div>
               <Button onClick={() => setIsFormOpen(true)} className="bg-blue-600 hover:bg-blue-700">
                 Add New PI
               </Button>
             </div>
 
-            {/* Search Bar */}
-            <Card className="shadow-lg border-0">
+            <Card>
               <CardHeader>
                 <CardTitle className="flex items-center">
                   <Search className="w-5 h-5 mr-2 text-blue-600" />
-                  Search Principal Investigators
+                  Search Investigators
                 </CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="relative">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
                   <Input
-                    placeholder="Search by name, email, department, or project code..."
+                    placeholder="Search by name, email, department or contact..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     className="pl-10"
@@ -205,12 +177,11 @@ const Investigators = () => {
               </CardContent>
             </Card>
 
-            {/* PI Table */}
-            <Card className="shadow-lg border-0">
+            <Card>
               <CardHeader>
                 <CardTitle className="flex items-center">
                   <Users className="w-5 h-5 mr-2 text-purple-600" />
-                  Principal Investigators ({filteredPIs.length})
+                  Investigators ({filteredPIs.length})
                 </CardTitle>
               </CardHeader>
               <CardContent className="p-0">
@@ -221,31 +192,23 @@ const Investigators = () => {
                         <TableHead>Name</TableHead>
                         <TableHead>Email</TableHead>
                         <TableHead>Department</TableHead>
-                        <TableHead>Project Code</TableHead>
+                        <TableHead>Contact Number</TableHead>
                         <TableHead>Actions</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
                       {filteredPIs.map((pi) => (
-                        <TableRow key={pi.id} className="hover:bg-gray-50">
-                          <TableCell className="font-medium">{pi.name}</TableCell>
+                        <TableRow key={pi.id}>
+                          <TableCell>{pi.name}</TableCell>
                           <TableCell>{pi.email || "-"}</TableCell>
                           <TableCell>{pi.department || "-"}</TableCell>
-                          <TableCell>{pi.project_code || "-"}</TableCell>
+                          <TableCell>{pi.contact_number || "-"}</TableCell>
                           <TableCell>
                             <div className="flex space-x-2">
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={() => handleEdit(pi)}
-                              >
+                              <Button size="sm" variant="outline" onClick={() => handleEdit(pi)}>
                                 <Edit className="w-3 h-3" />
                               </Button>
-                              <Button
-                                size="sm"
-                                variant="destructive"
-                                onClick={() => handleDelete(pi.id)}
-                              >
+                              <Button size="sm" variant="destructive" onClick={() => handleDelete(pi.id)}>
                                 <Trash2 className="w-3 h-3" />
                               </Button>
                             </div>
@@ -258,127 +221,56 @@ const Investigators = () => {
               </CardContent>
             </Card>
 
-            {/* Create PI Dialog */}
+            {/* Add Dialog */}
             <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
               <DialogContent className="sm:max-w-[425px]">
                 <DialogHeader>
-                  <DialogTitle>Add New Principal Investigator</DialogTitle>
+                  <DialogTitle>Add Investigator</DialogTitle>
                 </DialogHeader>
                 <div className="grid gap-4 py-4">
-                  <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="name" className="text-right">
-                      Name
-                    </Label>
-                    <Input
-                      id="name"
-                      value={name}
-                      onChange={(e) => setName(e.target.value)}
-                      className="col-span-3"
-                    />
-                  </div>
-                  <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="email" className="text-right">
-                      Email
-                    </Label>
-                    <Input
-                      type="email"
-                      id="email"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      className="col-span-3"
-                    />
-                  </div>
-                  <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="department" className="text-right">
-                      Department
-                    </Label>
-                    <Input
-                      id="department"
-                      value={department}
-                      onChange={(e) => setDepartment(e.target.value)}
-                      className="col-span-3"
-                    />
-                  </div>
-                  <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="projectCode" className="text-right">
-                      Project Code
-                    </Label>
-                    <Input
-                      id="projectCode"
-                      value={projectCode}
-                      onChange={(e) => setProjectCode(e.target.value)}
-                      className="col-span-3"
-                    />
-                  </div>
+                  <Label>Name</Label>
+                  <Input value={name} onChange={(e) => setName(e.target.value)} />
+
+                  <Label>Email</Label>
+                  <Input value={email} onChange={(e) => setEmail(e.target.value)} />
+
+                  <Label>Department</Label>
+                  <Input value={department} onChange={(e) => setDepartment(e.target.value)} />
+
+                  <Label>Contact Number</Label>
+                  <Input value={contactNumber} onChange={(e) => setContactNumber(e.target.value)} />
                 </div>
                 <div className="flex justify-end">
-                  <Button type="button" onClick={handleCreate}>
-                    Create
-                  </Button>
+                  <Button onClick={handleCreate}>Create</Button>
                 </div>
               </DialogContent>
             </Dialog>
 
-            {/* Edit PI Dialog */}
+            {/* Edit Dialog */}
             <Dialog open={isEditFormOpen} onOpenChange={setIsEditFormOpen}>
               <DialogContent className="sm:max-w-[425px]">
                 <DialogHeader>
-                  <DialogTitle>Edit Principal Investigator</DialogTitle>
+                  <DialogTitle>Edit Investigator</DialogTitle>
                 </DialogHeader>
                 <div className="grid gap-4 py-4">
-                  <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="name" className="text-right">
-                      Name
-                    </Label>
-                    <Input
-                      id="name"
-                      value={name}
-                      onChange={(e) => setName(e.target.value)}
-                      className="col-span-3"
-                    />
-                  </div>
-                  <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="email" className="text-right">
-                      Email
-                    </Label>
-                    <Input
-                      type="email"
-                      id="email"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      className="col-span-3"
-                    />
-                  </div>
-                  <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="department" className="text-right">
-                      Department
-                    </Label>
-                    <Input
-                      id="department"
-                      value={department}
-                      onChange={(e) => setDepartment(e.target.value)}
-                      className="col-span-3"
-                    />
-                  </div>
-                  <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="projectCode" className="text-right">
-                      Project Code
-                    </Label>
-                    <Input
-                      id="projectCode"
-                      value={projectCode}
-                      onChange={(e) => setProjectCode(e.target.value)}
-                      className="col-span-3"
-                    />
-                  </div>
+                  <Label>Name</Label>
+                  <Input value={name} onChange={(e) => setName(e.target.value)} />
+
+                  <Label>Email</Label>
+                  <Input value={email} onChange={(e) => setEmail(e.target.value)} />
+
+                  <Label>Department</Label>
+                  <Input value={department} onChange={(e) => setDepartment(e.target.value)} />
+
+                  <Label>Contact Number</Label>
+                  <Input value={contactNumber} onChange={(e) => setContactNumber(e.target.value)} />
                 </div>
                 <div className="flex justify-end">
-                  <Button type="button" onClick={handleUpdate}>
-                    Update
-                  </Button>
+                  <Button onClick={handleUpdate}>Update</Button>
                 </div>
               </DialogContent>
             </Dialog>
+
           </div>
         </SidebarInset>
       </div>

@@ -159,13 +159,16 @@ const UCList = ({ onEditUC, onCreateUC }: UCListProps) => {
 
               {/* Progress Tracker */}
               <div className="pt-4 border-t">
-                <UCProgressTracker 
-                  uc={uc} 
-                  variant="horizontal" 
-                  showLabels={true}
-                  size="sm"
-                />
-              </div>
+  <div className="px-1 py-3 bg-gray-50 rounded-lg overflow-x-auto scrollbar-hide">
+    <UCProgressTracker 
+      uc={uc} 
+      variant="horizontal" 
+      showLabels={true}
+      size="sm"
+    />
+  </div>
+</div>
+
 
               {/* Action Buttons */}
               <div className="flex justify-end space-x-2 pt-4 border-t">

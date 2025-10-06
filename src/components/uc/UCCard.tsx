@@ -1,7 +1,5 @@
-
 import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { CheckCircle, AlertCircle, Calendar, User, Building, FileText, BookOpen } from "lucide-react";
+import { AlertCircle, Calendar, User, Building, FileText, BookOpen } from "lucide-react";
 import { StatusBadge } from "./StatusBadge";
 import { FileActions } from "./FileActions";
 
@@ -26,6 +24,7 @@ export const UCCard = ({
     <Card className="hover:shadow-xl transition-all duration-300 border-0 bg-white/90 backdrop-blur-sm rounded-2xl overflow-hidden group hover:scale-[1.02]">
       <CardContent className="p-6">
         <div className="space-y-4">
+
           {/* Header Section */}
           <div className="flex items-start justify-between">
             <div className="space-y-2">
@@ -41,47 +40,47 @@ export const UCCard = ({
                   </span>
                 </div>
               </div>
+
               <div className="flex items-center space-x-2">
                 <StatusBadge status={entry.status} />
-              {/* File Attachments */}
-              <div className="flex items-center space-x-3">
-                {entry.uc_file_path && entry.uc_file_name && (
-                  <div 
-                    className="flex items-center space-x-1 px-2 py-1 bg-blue-50 rounded-md border border-blue-200 cursor-pointer hover:bg-blue-100 transition-colors"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onPreview(entry.uc_file_path, entry.uc_file_name);
-                    }}
-                    title="Click to preview UC file"
-                  >
-                    <FileText className="h-3 w-3 text-blue-600" />
-                    <span className="text-xs font-semibold text-blue-700">UC</span>
-                  </div>
-                )}
-                {entry.sanction_letter_file_path && entry.sanction_letter_file_name && (
-                  <div 
-                    className="flex items-center space-x-1 px-2 py-1 bg-green-50 rounded-md border border-green-200 cursor-pointer hover:bg-green-100 transition-colors"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onPreview(entry.sanction_letter_file_path, entry.sanction_letter_file_name);
-                    }}
-                    title="Click to preview Sanction Letter"
-                  >
-                    <FileText className="h-3 w-3 text-green-600" />
-                    <span className="text-xs font-semibold text-green-700">SL</span>
-                  </div>
-                )}
-                {!entry.uc_file_path && !entry.sanction_letter_file_path && (
-                  <div className="flex items-center space-x-1">
-                    <AlertCircle className="h-4 w-4 text-red-500" />
-                    <span className="text-xs text-red-600 font-medium">No Files</span>
-                  </div>
-                )}
-              </div>
+
+                <div className="flex items-center space-x-3">
+                  {entry.uc_file_path && entry.uc_file_name && (
+                    <div
+                      className="flex items-center space-x-1 px-2 py-1 bg-blue-50 rounded-md border border-blue-200 cursor-pointer hover:bg-blue-100 transition-colors"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onPreview(entry.uc_file_path, entry.uc_file_name);
+                      }}
+                      title="Click to preview UC file"
+                    >
+                      <FileText className="h-3 w-3 text-blue-600" />
+                      <span className="text-xs font-semibold text-blue-700">UC</span>
+                    </div>
+                  )}
+                  {entry.sanction_letter_file_path && entry.sanction_letter_file_name && (
+                    <div
+                      className="flex items-center space-x-1 px-2 py-1 bg-green-50 rounded-md border border-green-200 cursor-pointer hover:bg-green-100 transition-colors"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onPreview(entry.sanction_letter_file_path, entry.sanction_letter_file_name);
+                      }}
+                      title="Click to preview Sanction Letter"
+                    >
+                      <FileText className="h-3 w-3 text-green-600" />
+                      <span className="text-xs font-semibold text-green-700">SL</span>
+                    </div>
+                  )}
+                  {!entry.uc_file_path && !entry.sanction_letter_file_path && (
+                    <div className="flex items-center space-x-1">
+                      <AlertCircle className="h-4 w-4 text-red-500" />
+                      <span className="text-xs text-red-600 font-medium">No Files</span>
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
-            
-            {/* Financial Year Badge */}
+
             <div className="px-3 py-1 rounded-full bg-gradient-to-r from-orange-500/10 to-amber-500/10 border border-orange-200/50">
               <span className="text-sm font-medium text-orange-700">
                 {entry.financial_year?.year || 'N/A'}
@@ -114,7 +113,7 @@ export const UCCard = ({
                   </p>
                 </div>
               </div>
-              
+
               <div className="flex items-center space-x-2">
                 <Building className="h-4 w-4 text-purple-500" />
                 <div>
@@ -136,7 +135,7 @@ export const UCCard = ({
                   </p>
                 </div>
               </div>
-              
+
               <div className="flex items-center space-x-2">
                 <Calendar className="h-4 w-4 text-orange-500" />
                 <div>
@@ -147,6 +146,20 @@ export const UCCard = ({
                 </div>
               </div>
             </div>
+          </div>
+
+          {/* 🖌️ Color-coded Balances Section */}
+          <div className="bg-gray-50 rounded-lg p-3 space-y-1 border border-gray-200">
+            <p className="text-xs text-gray-500 font-medium">Balances</p>
+            <p className="text-sm font-semibold text-green-700">
+              Recurring: ₹ {entry.recurring_balance || '0'}
+            </p>
+            <p className="text-sm font-semibold text-amber-700">
+              Non-Recurring: ₹ {entry.non_recurring_balance || '0'}
+            </p>
+            <p className="text-sm font-bold text-indigo-700">
+              Total: ₹ {entry.total_balance || '0'}
+            </p>
           </div>
 
           {/* Actions Section */}
@@ -163,6 +176,7 @@ export const UCCard = ({
               />
             </div>
           </div>
+
         </div>
       </CardContent>
     </Card>
