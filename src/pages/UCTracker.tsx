@@ -29,10 +29,19 @@ const UCTracker = () => {
 
   return (
     <SidebarProvider>
-      <div className="min-h-screen flex w-full bg-gradient-to-br from-blue-50 via-white to-green-50">
+      {/* Page background */}
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-green-50">
+        {/* Sidebar */}
         <Sidebar />
+
+        {/* Main Content */}
         <SidebarInset>
-          <div className="flex-1 p-6">
+          {/* 
+            IMPORTANT:
+            Sidebar width ≈ 16rem (64).
+            This padding ensures content never goes under sidebar.
+          */}
+          <div className="pl-64 p-6 w-full max-w-full overflow-x-hidden">
             {editingUCId ? (
               <UCEditForm
                 ucId={editingUCId}
@@ -45,7 +54,10 @@ const UCTracker = () => {
                 onCancel={handleEditCancel}
               />
             ) : (
-              <UCList onEditUC={handleEditUC} onCreateUC={handleCreateUC} />
+              <UCList
+                onEditUC={handleEditUC}
+                onCreateUC={handleCreateUC}
+              />
             )}
           </div>
         </SidebarInset>
