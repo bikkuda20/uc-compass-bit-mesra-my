@@ -68,6 +68,7 @@ export const UCCard = ({
                       </span>
                     </div>
                   )}
+
                   {entry.sanction_letter_file_path &&
                     entry.sanction_letter_file_name && (
                       <div
@@ -87,6 +88,7 @@ export const UCCard = ({
                         </span>
                       </div>
                     )}
+
                   {!entry.uc_file_path &&
                     !entry.sanction_letter_file_path && (
                       <div className="flex items-center space-x-1">
@@ -139,7 +141,7 @@ export const UCCard = ({
                 </div>
               </div>
 
-              {/* Funding Agency – COLORED */}
+              {/* Funding Agency */}
               <div className="flex items-center space-x-2">
                 <Building className="h-4 w-4 text-purple-500" />
                 <div>
@@ -165,7 +167,7 @@ export const UCCard = ({
                 </div>
               </div>
 
-              {/* Upload Date */}
+              {/* Upload Date – FIXED (DD-MM-YYYY) */}
               <div className="flex items-center space-x-2">
                 <Calendar className="h-4 w-4 text-orange-500" />
                 <div>
@@ -174,13 +176,15 @@ export const UCCard = ({
                   </p>
                   <p className="text-sm font-semibold text-gray-800">
                     {entry.created_at
-                      ? new Date(entry.created_at).toLocaleDateString()
+                      ? new Date(entry.created_at)
+                          .toLocaleDateString("en-GB")
+                          .replace(/\//g, "-")
                       : "N/A"}
                   </p>
                 </div>
               </div>
 
-              {/* Project Type – COLORED */}
+              {/* Project Type */}
               <div className="flex items-center space-x-2">
                 <Layers className="h-4 w-4 text-teal-500" />
                 <div>

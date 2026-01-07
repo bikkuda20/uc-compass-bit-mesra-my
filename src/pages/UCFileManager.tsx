@@ -38,7 +38,7 @@ const UCFileManager = () => {
       uc.project_code?.toLowerCase().includes(search) ||
       uc.project_title?.toLowerCase().includes(search) ||
       uc.principal_investigator?.name?.toLowerCase().includes(search) ||
-      uc.funding_agency?.name?.toLowerCase().includes(search); // ✅ FIX
+      uc.funding_agency?.name?.toLowerCase().includes(search);
 
     return matchesYear && matchesSearch;
   });
@@ -136,11 +136,18 @@ const UCFileManager = () => {
         <SidebarInset>
           <div className="ml-64 p-6 space-y-6">
 
-            <div className="flex items-center space-x-4">
-              <Button variant="ghost" onClick={() => navigate('/')}>
-                <ArrowLeft className="w-4 h-4 mr-2" /> Back
-              </Button>
-              <h2 className="text-2xl font-bold">UC File Manager</h2>
+            {/* HEADER + TOTAL UC COUNT (RESTORED) */}
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-4">
+                <Button variant="ghost" onClick={() => navigate('/')}>
+                  <ArrowLeft className="w-4 h-4 mr-2" /> Back
+                </Button>
+                <h2 className="text-2xl font-bold">UC File Manager</h2>
+              </div>
+
+              <div className="px-4 py-1.5 rounded-full bg-indigo-100 text-indigo-800 text-sm font-semibold">
+                Total UCs: {filteredUCs.length}
+              </div>
             </div>
 
             <Card>
