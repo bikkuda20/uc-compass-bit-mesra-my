@@ -1,8 +1,14 @@
 import { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ArrowLeft, Search, FileText, Filter } from "lucide-react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { ArrowLeft, Search, Filter } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useNavigate } from "react-router-dom";
 import { useAllUCEntries, useFinancialYears } from "@/hooks/useSupabaseData";
@@ -26,7 +32,9 @@ const UCFileManager = () => {
   const [previewModal, setPreviewModal] =
     useState<{ filePath: string; fileName: string } | null>(null);
 
-  // ✅ FIXED SEARCH (Funding Agency INCLUDED)
+  /* ===========================
+     🔍 FILTER LOGIC (FINAL)
+     =========================== */
   const filteredUCs = ucs.filter((uc) => {
     const matchesYear =
       selectedYear === 'all' || uc.financial_year?.id === selectedYear;
@@ -38,11 +46,15 @@ const UCFileManager = () => {
       uc.project_code?.toLowerCase().includes(search) ||
       uc.project_title?.toLowerCase().includes(search) ||
       uc.principal_investigator?.name?.toLowerCase().includes(search) ||
-      uc.funding_agency?.name?.toLowerCase().includes(search);
+      uc.funding_agency?.name?.toLowerCase().includes(search) ||
+      uc.project_type?.name?.toLowerCase().includes(search); // ✅ PROJECT TYPE ENABLED
 
     return matchesYear && matchesSearch;
   });
 
+  /* ===========================
+     📄 FILE HANDLERS
+     =========================== */
   const handlePreview = (filePath: string, fileName: string) => {
     setPreviewModal({ filePath, fileName });
   };
@@ -74,10 +86,6 @@ const UCFileManager = () => {
     }
   };
 
-  const handleEdit = (ucId: string) => {
-    setEditingUC({ id: ucId });
-  };
-
   const handlePrint = async (filePath: string) => {
     try {
       const { data } = await supabase.storage
@@ -97,6 +105,10 @@ const UCFileManager = () => {
     }
   };
 
+  const handleEdit = (ucId: string) => {
+    setEditingUC({ id: ucId });
+  };
+
   const handleDelete = async (ucId: string) => {
     const success = await deleteUCEntry(ucId);
     if (success) {
@@ -110,6 +122,9 @@ const UCFileManager = () => {
     refetch();
   };
 
+  /* ===========================
+     ✏️ EDIT MODE
+     =========================== */
   if (editingUC) {
     return (
       <SidebarProvider>
@@ -129,6 +144,9 @@ const UCFileManager = () => {
     );
   }
 
+  /* ===========================
+     📁 MAIN VIEW
+     =========================== */
   return (
     <SidebarProvider>
       <div className="min-h-screen flex w-full bg-gradient-to-br from-blue-50 to-purple-100">
@@ -136,7 +154,7 @@ const UCFileManager = () => {
         <SidebarInset>
           <div className="ml-64 p-6 space-y-6">
 
-            {/* HEADER + TOTAL UC COUNT (RESTORED) */}
+            {/* HEADER */}
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-4">
                 <Button variant="ghost" onClick={() => navigate('/')}>
@@ -150,12 +168,14 @@ const UCFileManager = () => {
               </div>
             </div>
 
+            {/* FILTERS */}
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Filter className="w-5 h-5" /> Filters
                 </CardTitle>
               </CardHeader>
+
               <CardContent className="grid md:grid-cols-2 gap-4">
                 <Select value={selectedYear} onValueChange={setSelectedYear}>
                   <SelectTrigger>
@@ -174,7 +194,7 @@ const UCFileManager = () => {
                 <div className="relative">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                   <Input
-                    placeholder="Search by code, title, PI, funding agency..."
+                    placeholder="Search by code, title, PI, funding agency, project type..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                     className="pl-10"
@@ -183,6 +203,7 @@ const UCFileManager = () => {
               </CardContent>
             </Card>
 
+            {/* UC CARDS */}
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
               {filteredUCs.map((uc) => (
                 <UCCard
@@ -197,6 +218,7 @@ const UCFileManager = () => {
               ))}
             </div>
 
+            {/* PREVIEW MODAL */}
             {previewModal && (
               <PreviewModal
                 isOpen

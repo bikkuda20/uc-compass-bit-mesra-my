@@ -20,32 +20,34 @@ import {
   Building,
   Calendar,
   User,
+  Layers,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import UCProgressTracker from "./UCProgressTracker";
 import UCDetailsModal from "./UCDetailsModal";
 
 interface UCListProps {
-  onEditUC?: (ucId: string) => void;
+  onEditTracker?: (ucId: string) => void;
   onCreateUC?: () => void;
 }
 
-const UCList = ({ onEditUC, onCreateUC }: UCListProps) => {
+const UCList = ({ onEditTracker, onCreateUC }: UCListProps) => {
   const { ucs, loading, refetch, deleteUCEntry } = useUCEntries();
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [selectedUC, setSelectedUC] = useState<any>(null);
-  const [detailsModalOpen, setDetailsModalOpen] = useState(false);
   const { toast } = useToast();
 
   const filteredUCs = ucs.filter((uc) => {
     const matchesSearch =
-      uc.project_code.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      uc.project_code?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      uc.project_title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      uc.project_type?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       uc.principal_investigator?.name
-        .toLowerCase()
+        ?.toLowerCase()
         .includes(searchTerm.toLowerCase()) ||
       uc.funding_agency?.name
-        .toLowerCase()
+        ?.toLowerCase()
         .includes(searchTerm.toLowerCase()) ||
       uc.uc_entry_no?.toLowerCase().includes(searchTerm.toLowerCase());
 
@@ -55,21 +57,12 @@ const UCList = ({ onEditUC, onCreateUC }: UCListProps) => {
     return matchesSearch && matchesStatus;
   });
 
-  const handleEdit = (ucId: string) => {
-    onEditUC?.(ucId);
-  };
-
-  const handleViewDetails = (uc: any) => {
-    setSelectedUC(uc);
-    setDetailsModalOpen(true);
-  };
-
-  const handleDelete = async (ucId: string, ucEntryNo: string) => {
-    if (window.confirm(`Are you sure you want to delete UC entry ${ucEntryNo}?`)) {
+  const handleDelete = async (ucId: string, label: string) => {
+    if (window.confirm(`Delete UC entry ${label}?`)) {
       const success = await deleteUCEntry(ucId);
       if (success) {
         toast({
-          title: "Success",
+          title: "Deleted",
           description: "UC entry deleted successfully",
         });
       }
@@ -79,7 +72,7 @@ const UCList = ({ onEditUC, onCreateUC }: UCListProps) => {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600" />
         <span className="ml-2">Loading UC entries...</span>
       </div>
     );
@@ -87,58 +80,45 @@ const UCList = ({ onEditUC, onCreateUC }: UCListProps) => {
 
   return (
     <div className="space-y-6">
-
-      {/* ✅ FIXED HEADER */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <h1 className="text-2xl font-bold text-slate-800">
           UC Progress Tracker
         </h1>
 
-        <div className="flex flex-wrap items-center gap-3">
+        <div className="flex gap-2">
           {onCreateUC && (
-            <Button
-              onClick={onCreateUC}
-              className="bg-blue-600 hover:bg-blue-700"
-            >
-              Create New UC Tracker
-            </Button>
+            <Button onClick={onCreateUC}>Create New UC</Button>
           )}
-          <Button onClick={refetch} variant="outline">
+          <Button variant="outline" onClick={refetch}>
             Refresh
           </Button>
         </div>
       </div>
 
-      {/* Search and Filter Controls */}
+      {/* Search & Filter */}
       <div className="flex flex-col md:flex-row gap-4">
         <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
           <Input
-            placeholder="Search by project code, PI name, agency, or UC entry number..."
+            className="pl-10"
+            placeholder="Search by title, type, code, PI, agency, UC no..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-10"
           />
         </div>
+
         <Select value={statusFilter} onValueChange={setStatusFilter}>
           <SelectTrigger className="w-48">
-            <SelectValue placeholder="Filter by status" />
+            <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">All Statuses</SelectItem>
-            <SelectItem value="Not Started">Not Started</SelectItem>
-            <SelectItem value="Received from PI">Received from PI</SelectItem>
+            <SelectItem value="all">All Status</SelectItem>
+            <SelectItem value="Received from PI">Received</SelectItem>
             <SelectItem value="Verified by Related Person">Verified</SelectItem>
             <SelectItem value="Checked by AR Finance">AR Finance</SelectItem>
-            <SelectItem value="Sent to Deputy Comptroller">
-              Deputy Comptroller
-            </SelectItem>
-            <SelectItem value="Sent to Registrar Office">
-              To Registrar
-            </SelectItem>
-            <SelectItem value="Returned from Registrar Office">
-              From Registrar
-            </SelectItem>
+            <SelectItem value="Sent to Deputy Comptroller">Deputy</SelectItem>
+            <SelectItem value="Sent to Registrar Office">Registrar</SelectItem>
             <SelectItem value="Handed Over to PI">Completed</SelectItem>
           </SelectContent>
         </Select>
@@ -147,80 +127,113 @@ const UCList = ({ onEditUC, onCreateUC }: UCListProps) => {
       {/* UC Cards */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {filteredUCs.map((uc) => (
-          <Card
-            key={uc.id}
-            className="border-l-4 border-l-blue-500 hover:shadow-lg transition-shadow"
-          >
-            <CardHeader className="pb-3">
+          <Card key={uc.id} className="border-l-4 border-l-blue-500">
+            <CardHeader>
               <div className="flex justify-between items-start gap-4">
                 <div>
-                  <CardTitle className="text-lg font-semibold text-slate-800">
+                  <CardTitle className="text-lg font-semibold text-blue-700">
                     {uc.uc_entry_no || "No Entry Number"}
                   </CardTitle>
-                  <div className="flex flex-wrap items-center gap-4 text-sm text-gray-600 mt-2">
-                    <div className="flex items-center gap-1">
+
+                  <div className="flex flex-wrap gap-4 text-sm text-gray-600 mt-2">
+                    <span className="flex items-center gap-1">
                       <Building className="w-4 h-4" />
-                      <span>{uc.funding_agency?.name}</span>
-                    </div>
-                    <div className="flex items-center gap-1">
+                      {uc.funding_agency?.name}
+                    </span>
+                    <span className="flex items-center gap-1">
                       <Calendar className="w-4 h-4" />
-                      <span>{uc.financial_year?.year}</span>
-                    </div>
+                      {uc.financial_year?.year}
+                    </span>
                   </div>
                 </div>
-                <Badge className="bg-blue-100 text-blue-800">
-                  {uc.current_status}
-                </Badge>
+
+                <Badge>{uc.current_status}</Badge>
               </div>
             </CardHeader>
 
             <CardContent className="space-y-4">
-              <div className="grid grid-cols-2 gap-4 text-sm">
+              {/* Project Title */}
+              {uc.project_title && (
                 <div>
-                  <div className="flex items-center gap-1 text-gray-600">
-                    <User className="w-4 h-4" />
-                    <span className="font-medium">PI:</span>
+                  <div className="flex items-center gap-1 text-gray-500 text-xs font-medium">
+                    <FileText className="w-4 h-4" />
+                    Project Title
                   </div>
-                  <div className="ml-5">
-                    {uc.principal_investigator?.name}
+                  <div className="ml-5 text-sm font-semibold text-slate-800 line-clamp-2">
+                    {uc.project_title}
                   </div>
                 </div>
-                <div>
-                  <div className="flex items-center gap-1 text-gray-600">
-                    <FileText className="w-4 h-4" />
-                    <span className="font-medium">Project:</span>
-                  </div>
-                  <div className="ml-5">{uc.project_code}</div>
+              )}
+
+              {/* Project Type */}
+              <div className="flex items-center gap-2">
+                <Layers className="w-4 h-4 text-teal-600" />
+                <span className="text-xs text-gray-500 font-medium">
+                  Project Type
+                </span>
+                <Badge
+                  variant="secondary"
+                  className="bg-teal-100 text-teal-800 font-semibold"
+                >
+                  {uc.project_type || "N/A"}
+                </Badge>
+              </div>
+
+              {/* PI & Project Code */}
+              <div className="grid grid-cols-2 gap-4 text-sm">
+                <div className="flex items-center gap-1">
+                  <User className="w-4 h-4 text-gray-500" />
+                  {uc.principal_investigator?.name}
+                </div>
+                <div className="flex items-center gap-1 font-mono">
+                  <FileText className="w-4 h-4 text-gray-500" />
+                  {uc.project_code}
                 </div>
               </div>
 
               {/* Progress Tracker */}
-              <div className="pt-4 border-t">
-                <div className="px-2 py-3 bg-gray-50 rounded-lg overflow-x-auto">
-                  <UCProgressTracker
-                    uc={uc}
-                    variant="horizontal"
-                    showLabels
-                    size="sm"
-                  />
-                </div>
+              <div className="bg-gray-50 p-3 rounded-lg overflow-x-auto">
+                <UCProgressTracker
+                  uc={uc}
+                  variant="horizontal"
+                  size="sm"
+                  showLabels
+                />
               </div>
 
               {/* Actions */}
-              <div className="flex justify-end flex-wrap gap-2 pt-4 border-t">
-                <Button size="sm" variant="outline" onClick={() => handleViewDetails(uc)}>
-                  <Eye className="w-4 h-4 mr-1" /> Details
-                </Button>
-                <Button size="sm" variant="outline" onClick={() => handleEdit(uc.id)}>
-                  <Edit className="w-4 h-4 mr-1" /> Edit
-                </Button>
+              <div className="flex justify-end gap-2 pt-4 border-t">
                 <Button
                   size="sm"
                   variant="outline"
-                  onClick={() => handleDelete(uc.id, uc.uc_entry_no || uc.project_code)}
-                  className="text-red-600"
+                  onClick={() => setSelectedUC(uc)}
                 >
-                  <Trash2 className="w-4 h-4 mr-1" /> Delete
+                  <Eye className="w-4 h-4 mr-1" />
+                  Details
+                </Button>
+
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => onEditTracker?.(uc.id)}
+                >
+                  <Edit className="w-4 h-4 mr-1" />
+                  Edit
+                </Button>
+
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="text-red-600"
+                  onClick={() =>
+                    handleDelete(
+                      uc.id,
+                      uc.uc_entry_no || uc.project_code
+                    )
+                  }
+                >
+                  <Trash2 className="w-4 h-4 mr-1" />
+                  Delete
                 </Button>
               </div>
             </CardContent>
@@ -228,24 +241,10 @@ const UCList = ({ onEditUC, onCreateUC }: UCListProps) => {
         ))}
       </div>
 
-      {filteredUCs.length === 0 && (
-        <div className="text-center py-12">
-          <FileText className="mx-auto h-12 w-12 text-gray-400 mb-4" />
-          <h3 className="text-lg font-medium text-gray-900 mb-2">
-            No UC entries found
-          </h3>
-          <p className="text-gray-500">
-            {searchTerm || statusFilter !== "all"
-              ? "Try adjusting your search or filter criteria."
-              : "No UC entries have been created yet."}
-          </p>
-        </div>
-      )}
-
       <UCDetailsModal
         uc={selectedUC}
-        isOpen={detailsModalOpen}
-        onClose={() => setDetailsModalOpen(false)}
+        isOpen={!!selectedUC}
+        onClose={() => setSelectedUC(null)}
       />
     </div>
   );

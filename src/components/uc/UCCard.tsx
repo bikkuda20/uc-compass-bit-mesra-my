@@ -7,6 +7,8 @@ import {
   FileText,
   BookOpen,
   Layers,
+  FileSignature,
+  IndianRupee,
 } from "lucide-react";
 import { StatusBadge } from "./StatusBadge";
 import { FileActions } from "./FileActions";
@@ -19,6 +21,11 @@ interface UCCardProps {
   onPrint: (filePath: string) => void;
   onDelete: (ucId: string) => void;
 }
+
+const formatAmount = (value: number | string | null) => {
+  if (!value) return "N/A";
+  return Number(value).toLocaleString("en-IN");
+};
 
 export const UCCard = ({
   entry,
@@ -33,7 +40,7 @@ export const UCCard = ({
       <CardContent className="p-6">
         <div className="space-y-4">
 
-          {/* Header Section */}
+          {/* Header */}
           <div className="flex items-start justify-between">
             <div className="space-y-2">
               <div className="flex items-center space-x-3">
@@ -55,12 +62,10 @@ export const UCCard = ({
                 <div className="flex items-center space-x-3">
                   {entry.uc_file_path && entry.uc_file_name && (
                     <div
-                      className="flex items-center space-x-1 px-2 py-1 bg-blue-50 rounded-md border border-blue-200 cursor-pointer hover:bg-blue-100 transition-colors"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onPreview(entry.uc_file_path, entry.uc_file_name);
-                      }}
-                      title="Click to preview UC file"
+                      className="flex items-center space-x-1 px-2 py-1 bg-blue-50 rounded-md border border-blue-200 cursor-pointer hover:bg-blue-100"
+                      onClick={() =>
+                        onPreview(entry.uc_file_path, entry.uc_file_name)
+                      }
                     >
                       <FileText className="h-3 w-3 text-blue-600" />
                       <span className="text-xs font-semibold text-blue-700">
@@ -72,15 +77,13 @@ export const UCCard = ({
                   {entry.sanction_letter_file_path &&
                     entry.sanction_letter_file_name && (
                       <div
-                        className="flex items-center space-x-1 px-2 py-1 bg-green-50 rounded-md border border-green-200 cursor-pointer hover:bg-green-100 transition-colors"
-                        onClick={(e) => {
-                          e.stopPropagation();
+                        className="flex items-center space-x-1 px-2 py-1 bg-green-50 rounded-md border border-green-200 cursor-pointer hover:bg-green-100"
+                        onClick={() =>
                           onPreview(
                             entry.sanction_letter_file_path,
                             entry.sanction_letter_file_name
-                          );
-                        }}
-                        title="Click to preview Sanction Letter"
+                          )
+                        }
                       >
                         <FileText className="h-3 w-3 text-green-600" />
                         <span className="text-xs font-semibold text-green-700">
@@ -112,7 +115,7 @@ export const UCCard = ({
           {/* Project Title */}
           {entry.project_title && (
             <div className="flex items-start space-x-2">
-              <BookOpen className="h-4 w-4 text-indigo-500 mt-0.5 flex-shrink-0" />
+              <BookOpen className="h-4 w-4 text-indigo-500 mt-0.5" />
               <div>
                 <p className="text-xs text-gray-500 font-medium">
                   Project Title
@@ -124,57 +127,78 @@ export const UCCard = ({
             </div>
           )}
 
-          {/* Details Grid */}
+          {/* Details */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
 
+            {/* LEFT */}
             <div className="space-y-3">
-              {/* Principal Investigator */}
               <div className="flex items-center space-x-2">
                 <User className="h-4 w-4 text-blue-500" />
                 <div>
-                  <p className="text-xs text-gray-500 font-medium">
-                    Principal Investigator
-                  </p>
-                  <p className="text-sm font-semibold text-gray-800">
+                  <p className="text-xs text-gray-500">Principal Investigator</p>
+                  <p className="text-sm font-semibold">
                     {entry.principal_investigator?.name || "N/A"}
                   </p>
                 </div>
               </div>
 
-              {/* Funding Agency */}
               <div className="flex items-center space-x-2">
                 <Building className="h-4 w-4 text-purple-500" />
                 <div>
-                  <p className="text-xs text-gray-500 font-medium">
-                    Funding Agency
-                  </p>
+                  <p className="text-xs text-gray-500">Funding Agency</p>
                   <span className="inline-block mt-1 px-3 py-0.5 rounded-full bg-purple-100 text-purple-800 text-xs font-semibold">
                     {entry.funding_agency?.name || "N/A"}
                   </span>
                 </div>
               </div>
-            </div>
 
-            <div className="space-y-3">
-              {/* Scheme */}
-              <div className="flex items-center space-x-2">
-                <FileText className="h-4 w-4 text-green-500" />
+              {/* Sanction Number */}
+              <div className="flex items-start space-x-2">
+                <FileSignature className="h-4 w-4 text-slate-600 mt-0.5" />
                 <div>
-                  <p className="text-xs text-gray-500 font-medium">Scheme</p>
-                  <p className="text-sm font-semibold text-gray-800">
-                    {entry.scheme?.name || entry.scheme_name || "N/A"}
+                  <p className="text-xs text-gray-500">Sanction Number</p>
+                  <p className="text-sm font-medium text-gray-800 break-all">
+                    {entry.sanction_number || "N/A"}
                   </p>
                 </div>
               </div>
 
-              {/* Upload Date – FIXED (DD-MM-YYYY) */}
+              {/* ✅ TOTAL SANCTION AMOUNT */}
+              <div className="flex items-center space-x-2">
+                <IndianRupee className="h-4 w-4 text-emerald-600" />
+                <div>
+                  <p className="text-xs text-gray-500">
+                    Total Sanction Amount
+                  </p>
+                  <p className="text-sm font-semibold text-emerald-700">
+                    ₹{" "}
+                    {formatAmount(
+                      entry.total_sanction_amount ??
+                        entry.sanction_amount ??
+                        null
+                    )}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* RIGHT */}
+            <div className="space-y-3">
+              <div className="flex items-center space-x-2">
+                <FileText className="h-4 w-4 text-green-500" />
+                <div>
+                  <p className="text-xs text-gray-500">Scheme</p>
+                  <p className="text-sm font-semibold">
+                    {entry.scheme?.name || "N/A"}
+                  </p>
+                </div>
+              </div>
+
               <div className="flex items-center space-x-2">
                 <Calendar className="h-4 w-4 text-orange-500" />
                 <div>
-                  <p className="text-xs text-gray-500 font-medium">
-                    Upload Date
-                  </p>
-                  <p className="text-sm font-semibold text-gray-800">
+                  <p className="text-xs text-gray-500">Upload Date</p>
+                  <p className="text-sm font-semibold">
                     {entry.created_at
                       ? new Date(entry.created_at)
                           .toLocaleDateString("en-GB")
@@ -184,13 +208,30 @@ export const UCCard = ({
                 </div>
               </div>
 
-              {/* Project Type */}
+              <div className="flex items-center space-x-2">
+                <Calendar className="h-4 w-4 text-teal-500" />
+                <div>
+                  <p className="text-xs text-gray-500">Programme Duration</p>
+                  <p className="text-sm font-semibold">
+                    {entry.project_start_date
+                      ? new Date(entry.project_start_date)
+                          .toLocaleDateString("en-GB")
+                          .replace(/\//g, "-")
+                      : "N/A"}{" "}
+                    →{" "}
+                    {entry.project_end_date
+                      ? new Date(entry.project_end_date)
+                          .toLocaleDateString("en-GB")
+                          .replace(/\//g, "-")
+                      : "N/A"}
+                  </p>
+                </div>
+              </div>
+
               <div className="flex items-center space-x-2">
                 <Layers className="h-4 w-4 text-teal-500" />
                 <div>
-                  <p className="text-xs text-gray-500 font-medium">
-                    Project Type
-                  </p>
+                  <p className="text-xs text-gray-500">Project Type</p>
                   <span className="inline-block mt-1 px-3 py-0.5 rounded-full bg-teal-100 text-teal-800 text-xs font-semibold">
                     {entry.project_type || "N/A"}
                   </span>
@@ -200,32 +241,30 @@ export const UCCard = ({
           </div>
 
           {/* Balances */}
-          <div className="bg-gray-50 rounded-lg p-3 space-y-1 border border-gray-200">
-            <p className="text-xs text-gray-500 font-medium">Balances</p>
+          <div className="bg-gray-50 rounded-lg p-3 border border-gray-200">
+            <p className="text-xs text-gray-500">Balances</p>
             <p className="text-sm font-semibold text-green-700">
-              Recurring: ₹ {entry.recurring_balance || "0"}
+              Recurring: ₹ {entry.recurring_balance || 0}
             </p>
             <p className="text-sm font-semibold text-amber-700">
-              Non-Recurring: ₹ {entry.non_recurring_balance || "0"}
+              Non-Recurring: ₹ {entry.non_recurring_balance || 0}
             </p>
             <p className="text-sm font-bold text-indigo-700">
-              Total: ₹ {entry.total_balance || "0"}
+              Total: ₹ {entry.total_balance || 0}
             </p>
           </div>
 
           {/* Actions */}
-          <div className="pt-4 border-t border-gray-100">
-            <div className="flex items-center justify-between">
-              <p className="text-xs text-gray-500 font-medium">Actions</p>
-              <FileActions
-                entry={entry}
-                onPreview={onPreview}
-                onDownload={onDownload}
-                onEdit={onEdit}
-                onPrint={onPrint}
-                onDelete={onDelete}
-              />
-            </div>
+          <div className="pt-4 border-t border-gray-100 flex justify-between">
+            <p className="text-xs text-gray-500">Actions</p>
+            <FileActions
+              entry={entry}
+              onPreview={onPreview}
+              onDownload={onDownload}
+              onEdit={onEdit}
+              onPrint={onPrint}
+              onDelete={onDelete}
+            />
           </div>
 
         </div>
