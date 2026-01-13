@@ -23,7 +23,7 @@ interface UCCardProps {
 }
 
 const formatAmount = (value: number | string | null) => {
-  if (!value) return "N/A";
+  if (value === null || value === undefined) return "0";
   return Number(value).toLocaleString("en-IN");
 };
 
@@ -35,6 +35,20 @@ export const UCCard = ({
   onPrint,
   onDelete,
 }: UCCardProps) => {
+
+  /* ================= SIMPLE AUTO-ADD LOGIC ================= */
+  const recurring = Number(entry.recurring_balance || 0);
+  const nonRecurring = Number(entry.non_recurring_balance || 0);
+  const interestEarned = Number(entry.interest_earned || 0);
+  const interestRefunded = Number(entry.interest_refunded || 0);
+
+  const finalBalance =
+    recurring +
+    nonRecurring +
+    interestEarned +
+    interestRefunded;
+  /* ========================================================= */
+
   return (
     <Card className="hover:shadow-xl transition-all duration-300 border-0 bg-white/90 backdrop-blur-sm rounded-2xl overflow-hidden group hover:scale-[1.02]">
       <CardContent className="p-6">
@@ -129,7 +143,6 @@ export const UCCard = ({
 
           {/* Details */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-
             {/* LEFT */}
             <div className="space-y-3">
               <div className="flex items-center space-x-2">
@@ -152,7 +165,6 @@ export const UCCard = ({
                 </div>
               </div>
 
-              {/* Sanction Number */}
               <div className="flex items-start space-x-2">
                 <FileSignature className="h-4 w-4 text-slate-600 mt-0.5" />
                 <div>
@@ -163,7 +175,6 @@ export const UCCard = ({
                 </div>
               </div>
 
-              {/* ✅ TOTAL SANCTION AMOUNT */}
               <div className="flex items-center space-x-2">
                 <IndianRupee className="h-4 w-4 text-emerald-600" />
                 <div>
@@ -240,18 +251,42 @@ export const UCCard = ({
             </div>
           </div>
 
-          {/* Balances */}
-          <div className="bg-gray-50 rounded-lg p-3 border border-gray-200">
+          {/* BALANCES */}
+          <div className="bg-gray-50 rounded-lg p-3 border border-gray-200 text-sm space-y-1">
             <p className="text-xs text-gray-500">Balances</p>
-            <p className="text-sm font-semibold text-green-700">
-              Recurring: ₹ {entry.recurring_balance || 0}
-            </p>
-            <p className="text-sm font-semibold text-amber-700">
-              Non-Recurring: ₹ {entry.non_recurring_balance || 0}
-            </p>
-            <p className="text-sm font-bold text-indigo-700">
-              Total: ₹ {entry.total_balance || 0}
-            </p>
+
+            <div className="flex justify-between font-semibold text-emerald-700">
+              <span>Recurring</span>
+              <span>₹ {formatAmount(recurring)}</span>
+            </div>
+
+            <div className="flex justify-between font-semibold text-amber-700">
+              <span>Non-Recurring</span>
+              <span>₹ {formatAmount(nonRecurring)}</span>
+            </div>
+
+            <div className="flex justify-between font-semibold text-blue-700">
+              <span>Interest Earned</span>
+              <span>₹ {formatAmount(interestEarned)}</span>
+            </div>
+
+            <div className="flex justify-between font-semibold text-red-700">
+              <span>Interest Refunded</span>
+              <span>₹ {formatAmount(interestRefunded)}</span>
+            </div>
+
+            <div className="pt-1 border-t flex justify-between font-bold">
+              <span>Total</span>
+              <span
+                className={
+                  finalBalance < 0
+                    ? "text-red-700"
+                    : "text-purple-700"
+                }
+              >
+                ₹ {formatAmount(finalBalance)}
+              </span>
+            </div>
           </div>
 
           {/* Actions */}

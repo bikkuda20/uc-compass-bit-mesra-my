@@ -44,12 +44,14 @@ const UCEditForm = ({ ucId, onComplete, onCancel }: UCEditFormProps) => {
     status: "Pending",
 
     sanctionNumber: "",
-    projectStartDate: "",
-    projectEndDate: "",
     totalSanctionAmount: "",
+    programmeStartDate: "",
+    programmeEndDate: "",
 
     recurringBalance: "",
     nonRecurringBalance: "",
+    interestEarned: "",
+    interestRefunded: "",
     totalBalance: "",
 
     ucReceivedDate: "",
@@ -71,7 +73,7 @@ const UCEditForm = ({ ucId, onComplete, onCancel }: UCEditFormProps) => {
 
   const { schemes } = useSchemes(formData.fundingAgencyId);
 
-  /* ================= FETCH DATA ================= */
+  /* ================= FETCH ================= */
   useEffect(() => {
     const fetchUC = async () => {
       const { data, error } = await supabase
@@ -89,6 +91,11 @@ const UCEditForm = ({ ucId, onComplete, onCancel }: UCEditFormProps) => {
         return;
       }
 
+      const r = parseFloat(data.recurring_balance) || 0;
+      const nr = parseFloat(data.non_recurring_balance) || 0;
+      const ie = parseFloat(data.interest_earned) || 0;
+      const ir = parseFloat(data.interest_refunded) || 0;
+
       setFormData({
         fundingAgencyId: data.funding_agency_id || "",
         schemeId: data.scheme_id || "",
@@ -101,38 +108,28 @@ const UCEditForm = ({ ucId, onComplete, onCancel }: UCEditFormProps) => {
         status: data.status || "Pending",
 
         sanctionNumber: data.sanction_number || "",
-        projectStartDate: data.project_start_date || "",
-        projectEndDate: data.project_end_date || "",
-        totalSanctionAmount:
-          data.total_sanction_amount?.toString() || "",
+        totalSanctionAmount: data.total_sanction_amount?.toString() || "",
+        programmeStartDate: data.project_start_date || "",
+        programmeEndDate: data.project_end_date || "",
 
-        recurringBalance: data.recurring_balance?.toString() || "",
-        nonRecurringBalance:
-          data.non_recurring_balance?.toString() || "",
-        totalBalance: (
-          (parseFloat(data.recurring_balance) || 0) +
-          (parseFloat(data.non_recurring_balance) || 0)
-        ).toFixed(2),
+        recurringBalance: r.toString(),
+        nonRecurringBalance: nr.toString(),
+        interestEarned: ie.toString(),
+        interestRefunded: ir.toString(),
+        totalBalance: (r + nr + ie + ir).toFixed(2),
 
         ucReceivedDate: data.uc_received_date || "",
         ucVerifiedDate: data.uc_verified_date || "",
-        ucCheckedArFinanceDate:
-          data.uc_checked_ar_finance_date || "",
-        ucSentDeputyComptrollerDate:
-          data.uc_sent_deputy_comptroller_date || "",
-        ucSentRegistrarDate:
-          data.uc_sent_registrar_date || "",
-        ucReturnedRegistrarDate:
-          data.uc_returned_registrar_date || "",
-        ucHandedOverPiDate:
-          data.uc_handed_over_pi_date || "",
+        ucCheckedArFinanceDate: data.uc_checked_ar_finance_date || "",
+        ucSentDeputyComptrollerDate: data.uc_sent_deputy_comptroller_date || "",
+        ucSentRegistrarDate: data.uc_sent_registrar_date || "",
+        ucReturnedRegistrarDate: data.uc_returned_registrar_date || "",
+        ucHandedOverPiDate: data.uc_handed_over_pi_date || "",
 
         uc_file_path: data.uc_file_path,
         uc_file_name: data.uc_file_name,
-        sanction_letter_file_path:
-          data.sanction_letter_file_path,
-        sanction_letter_file_name:
-          data.sanction_letter_file_name,
+        sanction_letter_file_path: data.sanction_letter_file_path,
+        sanction_letter_file_name: data.sanction_letter_file_name,
       });
 
       setLoading(false);
@@ -143,45 +140,35 @@ const UCEditForm = ({ ucId, onComplete, onCancel }: UCEditFormProps) => {
 
   /* ================= INPUT HANDLER ================= */
   const handleInputChange = (field: string, value: string) => {
-    setFormData((prev: any) => {
+    setFormData(prev => {
       const updated = { ...prev, [field]: value };
 
-      if (field === "recurringBalance" || field === "nonRecurringBalance") {
-        const r =
-          parseFloat(
-            field === "recurringBalance"
-              ? value
-              : updated.recurringBalance
-          ) || 0;
-        const nr =
-          parseFloat(
-            field === "nonRecurringBalance"
-              ? value
-              : updated.nonRecurringBalance
-          ) || 0;
-        updated.totalBalance = (r + nr).toFixed(2);
+      if (
+        field === "recurringBalance" ||
+        field === "nonRecurringBalance" ||
+        field === "interestEarned" ||
+        field === "interestRefunded"
+      ) {
+        const r = parseFloat(updated.recurringBalance) || 0;
+        const nr = parseFloat(updated.nonRecurringBalance) || 0;
+        const ie = parseFloat(updated.interestEarned) || 0;
+        const ir = parseFloat(updated.interestRefunded) || 0;
+        updated.totalBalance = (r + nr + ie + ir).toFixed(2);
       }
 
-      if (field === "fundingAgencyId") {
-        updated.schemeId = "";
-      }
-
+      if (field === "fundingAgencyId") updated.schemeId = "";
       return updated;
     });
   };
 
-  /* ================= FILE HANDLERS ================= */
+  /* ================= FILE HELPERS ================= */
   const previewFile = async (path: string) => {
-    const { data } = await supabase.storage
-      .from("uc-files")
-      .download(path);
+    const { data } = await supabase.storage.from("uc-files").download(path);
     window.open(URL.createObjectURL(data), "_blank");
   };
 
   const downloadFile = async (path: string, name: string) => {
-    const { data } = await supabase.storage
-      .from("uc-files")
-      .download(path);
+    const { data } = await supabase.storage.from("uc-files").download(path);
     const url = URL.createObjectURL(data);
     const a = document.createElement("a");
     a.href = url;
@@ -211,7 +198,7 @@ const UCEditForm = ({ ucId, onComplete, onCancel }: UCEditFormProps) => {
           };
 
     await supabase.from("uc_entries").update(update).eq("id", ucId);
-    toast({ title: "File updated successfully" });
+    toast({ title: "File uploaded successfully" });
   };
 
   /* ================= SUBMIT ================= */
@@ -233,31 +220,27 @@ const UCEditForm = ({ ucId, onComplete, onCancel }: UCEditFormProps) => {
         status: formData.status,
 
         sanction_number: formData.sanctionNumber || null,
-        project_start_date: formData.projectStartDate || null,
-        project_end_date: formData.projectEndDate || null,
-        total_sanction_amount:
-          parseFloat(formData.totalSanctionAmount) || null,
+        total_sanction_amount: parseFloat(formData.totalSanctionAmount) || null,
+        project_start_date: formData.programmeStartDate || null,
+        project_end_date: formData.programmeEndDate || null,
 
-        recurring_balance:
-          parseFloat(formData.recurringBalance) || 0,
-        non_recurring_balance:
-          parseFloat(formData.nonRecurringBalance) || 0,
+        recurring_balance: parseFloat(formData.recurringBalance) || 0,
+        non_recurring_balance: parseFloat(formData.nonRecurringBalance) || 0,
+        interest_earned: parseFloat(formData.interestEarned) || 0,
+        interest_refunded: parseFloat(formData.interestRefunded) || 0,
         total_balance:
           (parseFloat(formData.recurringBalance) || 0) +
-          (parseFloat(formData.nonRecurringBalance) || 0),
+          (parseFloat(formData.nonRecurringBalance) || 0) +
+          (parseFloat(formData.interestEarned) || 0) +
+          (parseFloat(formData.interestRefunded) || 0),
 
         uc_received_date: formData.ucReceivedDate || null,
         uc_verified_date: formData.ucVerifiedDate || null,
-        uc_checked_ar_finance_date:
-          formData.ucCheckedArFinanceDate || null,
-        uc_sent_deputy_comptroller_date:
-          formData.ucSentDeputyComptrollerDate || null,
-        uc_sent_registrar_date:
-          formData.ucSentRegistrarDate || null,
-        uc_returned_registrar_date:
-          formData.ucReturnedRegistrarDate || null,
-        uc_handed_over_pi_date:
-          formData.ucHandedOverPiDate || null,
+        uc_checked_ar_finance_date: formData.ucCheckedArFinanceDate || null,
+        uc_sent_deputy_comptroller_date: formData.ucSentDeputyComptrollerDate || null,
+        uc_sent_registrar_date: formData.ucSentRegistrarDate || null,
+        uc_returned_registrar_date: formData.ucReturnedRegistrarDate || null,
+        uc_handed_over_pi_date: formData.ucHandedOverPiDate || null,
 
         updated_at: new Date().toISOString(),
       })
@@ -278,233 +261,123 @@ const UCEditForm = ({ ucId, onComplete, onCancel }: UCEditFormProps) => {
       </Button>
 
       <form onSubmit={handleSubmit} className="space-y-6">
-        {/* BASIC INFORMATION */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Basic Information</CardTitle>
-          </CardHeader>
-          <CardContent className="grid md:grid-cols-2 gap-4">
 
-            <div>
+        {/* BASIC + WORKFLOW */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+
+          {/* BASIC INFO */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Basic Information</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+
               <Label>Funding Agency *</Label>
-              <Select
-                value={formData.fundingAgencyId}
-                onValueChange={(v) =>
-                  handleInputChange("fundingAgencyId", v)
-                }
-              >
+              <Select value={formData.fundingAgencyId} onValueChange={v => handleInputChange("fundingAgencyId", v)}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
                   {agencies.map(a => (
-                    <SelectItem key={a.id} value={a.id}>
-                      {a.name}
-                    </SelectItem>
+                    <SelectItem key={a.id} value={a.id}>{a.name}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
-            </div>
 
-            <div>
+              <Label>Project Title</Label>
+              <Input value={formData.projectTitle} onChange={e => handleInputChange("projectTitle", e.target.value)} />
+
               <Label>Scheme</Label>
-              <Select
-                value={formData.schemeId}
-                onValueChange={(v) =>
-                  handleInputChange("schemeId", v)
-                }
-                disabled={!formData.fundingAgencyId}
-              >
+              <Select value={formData.schemeId} onValueChange={v => handleInputChange("schemeId", v)}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
                   {schemes.map(s => (
-                    <SelectItem key={s.id} value={s.id}>
-                      {s.name}
-                    </SelectItem>
+                    <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
-            </div>
 
-            <div>
               <Label>Financial Year *</Label>
-              <Select
-                value={formData.financialYearId}
-                onValueChange={(v) =>
-                  handleInputChange("financialYearId", v)
-                }
-              >
+              <Select value={formData.financialYearId} onValueChange={v => handleInputChange("financialYearId", v)}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
                   {years.map(y => (
-                    <SelectItem key={y.id} value={y.id}>
-                      {y.year}
-                    </SelectItem>
+                    <SelectItem key={y.id} value={y.id}>{y.year}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
-            </div>
 
-            <div>
               <Label>Principal Investigator *</Label>
-              <Select
-                value={formData.piId}
-                onValueChange={(v) =>
-                  handleInputChange("piId", v)
-                }
-              >
+              <Select value={formData.piId} onValueChange={v => handleInputChange("piId", v)}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
                   {pis.map(pi => (
-                    <SelectItem key={pi.id} value={pi.id}>
-                      {pi.name}
-                    </SelectItem>
+                    <SelectItem key={pi.id} value={pi.id}>{pi.name}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
-            </div>
 
-            <div>
-              <Label>Project Title</Label>
-              <Input
-                value={formData.projectTitle}
-                onChange={(e) =>
-                  handleInputChange("projectTitle", e.target.value)
-                }
-              />
-            </div>
-
-            <div>
               <Label>Project Code *</Label>
-              <Input
-                value={formData.projectCode}
-                onChange={(e) =>
-                  handleInputChange("projectCode", e.target.value)
-                }
-              />
-            </div>
+              <Input value={formData.projectCode} onChange={e => handleInputChange("projectCode", e.target.value)} />
 
-            <div>
               <Label>UC Entry No</Label>
-              <Input
-                value={formData.ucEntryNo}
-                onChange={(e) =>
-                  handleInputChange("ucEntryNo", e.target.value)
-                }
-              />
-            </div>
+              <Input value={formData.ucEntryNo} onChange={e => handleInputChange("ucEntryNo", e.target.value)} />
 
-            <div>
-              <Label>Project Type</Label>
-              <Select
-                value={formData.projectType}
-                onValueChange={(v) =>
-                  handleInputChange("projectType", v)
-                }
-              >
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  {[
-                    "Project",
-                    "Workshop",
-                    "Seminar",
-                    "Symposium",
-                    "Conference",
-                    "FDP",
-                    "ATAL FDP",
-                    "International Conference"
-                  ].map(t => (
-                    <SelectItem key={t} value={t}>
-                      {t}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div>
               <Label>Sanction Number</Label>
-              <Input
-                value={formData.sanctionNumber}
-                onChange={(e) =>
-                  handleInputChange("sanctionNumber", e.target.value)
-                }
-              />
-            </div>
+              <Input value={formData.sanctionNumber} onChange={e => handleInputChange("sanctionNumber", e.target.value)} />
 
-            <div>
               <Label>Total Sanction Amount (₹)</Label>
-              <Input
-                type="number"
-                value={formData.totalSanctionAmount}
-                onChange={(e) =>
-                  handleInputChange(
-                    "totalSanctionAmount",
-                    e.target.value
-                  )
-                }
-              />
-            </div>
+              <Input type="number" value={formData.totalSanctionAmount} onChange={e => handleInputChange("totalSanctionAmount", e.target.value)} />
 
-            <div>
               <Label>Programme Start Date</Label>
-              <Input
-                type="date"
-                value={formData.projectStartDate}
-                onChange={(e) =>
-                  handleInputChange(
-                    "projectStartDate",
-                    e.target.value
-                  )
-                }
-              />
-            </div>
+              <Input type="date" value={formData.programmeStartDate} onChange={e => handleInputChange("programmeStartDate", e.target.value)} />
 
-            <div>
               <Label>Programme End Date</Label>
-              <Input
-                type="date"
-                value={formData.projectEndDate}
-                onChange={(e) =>
-                  handleInputChange(
-                    "projectEndDate",
-                    e.target.value
-                  )
-                }
-              />
-            </div>
+              <Input type="date" value={formData.programmeEndDate} onChange={e => handleInputChange("programmeEndDate", e.target.value)} />
 
-            <div>
-              <Label>Recurring Balance</Label>
-              <Input
-                value={formData.recurringBalance}
-                onChange={(e) =>
-                  handleInputChange(
-                    "recurringBalance",
-                    e.target.value
-                  )
-                }
-              />
-            </div>
+              <Label>Recurring Balance (₹)</Label>
+              <Input value={formData.recurringBalance} onChange={e => handleInputChange("recurringBalance", e.target.value)} />
 
-            <div>
-              <Label>Non-Recurring Balance</Label>
-              <Input
-                value={formData.nonRecurringBalance}
-                onChange={(e) =>
-                  handleInputChange(
-                    "nonRecurringBalance",
-                    e.target.value
-                  )
-                }
-              />
-            </div>
+              <Label>Non-Recurring Balance (₹)</Label>
+              <Input value={formData.nonRecurringBalance} onChange={e => handleInputChange("nonRecurringBalance", e.target.value)} />
 
-            <div>
-              <Label>Total Balance</Label>
+              <Label>Interest Earned (₹)</Label>
+              <Input value={formData.interestEarned} onChange={e => handleInputChange("interestEarned", e.target.value)} />
+
+              <Label>Interest Refunded (₹)</Label>
+              <Input value={formData.interestRefunded} onChange={e => handleInputChange("interestRefunded", e.target.value)} />
+
+              <Label>Total Balance (₹)</Label>
               <Input value={formData.totalBalance} readOnly />
-            </div>
+            </CardContent>
+          </Card>
 
-          </CardContent>
-        </Card>
+          {/* WORKFLOW */}
+          <Card>
+            <CardHeader>
+              <CardTitle>UC Workflow Tracking</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {[
+                "ucReceivedDate",
+                "ucVerifiedDate",
+                "ucCheckedArFinanceDate",
+                "ucSentDeputyComptrollerDate",
+                "ucSentRegistrarDate",
+                "ucReturnedRegistrarDate",
+                "ucHandedOverPiDate",
+              ].map(field => (
+                <div key={field}>
+                  <Label>{field.replace(/([A-Z])/g, " $1")}</Label>
+                  <Input
+                    type="date"
+                    value={formData[field]}
+                    onChange={e => handleInputChange(field, e.target.value)}
+                  />
+                </div>
+              ))}
+            </CardContent>
+          </Card>
+
+        </div>
 
         {/* ATTACHMENTS */}
         <Card>
@@ -516,94 +389,47 @@ const UCEditForm = ({ ucId, onComplete, onCancel }: UCEditFormProps) => {
             <div>
               <Label>Utilisation Certificate (PDF)</Label>
               {formData.uc_file_path && (
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-3 mb-2">
                   <FileText className="w-4 h-4" />
                   <span>{formData.uc_file_name}</span>
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    onClick={() =>
-                      previewFile(formData.uc_file_path)
-                    }
-                  >
+                  <Button size="sm" variant="ghost" onClick={() => previewFile(formData.uc_file_path)}>
                     <Eye className="w-4 h-4" />
                   </Button>
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    onClick={() =>
-                      downloadFile(
-                        formData.uc_file_path,
-                        formData.uc_file_name
-                      )
-                    }
-                  >
+                  <Button size="sm" variant="ghost" onClick={() => downloadFile(formData.uc_file_path, formData.uc_file_name)}>
                     <Download className="w-4 h-4" />
                   </Button>
                 </div>
               )}
-              <Input
-                type="file"
-                accept="application/pdf"
-                onChange={(e) =>
-                  e.target.files &&
-                  uploadFile(e.target.files[0], "uc")
-                }
-              />
+              <Input type="file" accept="application/pdf" onChange={e => e.target.files && uploadFile(e.target.files[0], "uc")} />
             </div>
 
             <div>
               <Label>Sanction Letter (PDF)</Label>
               {formData.sanction_letter_file_path && (
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-3 mb-2">
                   <FileText className="w-4 h-4" />
                   <span>{formData.sanction_letter_file_name}</span>
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    onClick={() =>
-                      previewFile(
-                        formData.sanction_letter_file_path
-                      )
-                    }
-                  >
+                  <Button size="sm" variant="ghost" onClick={() => previewFile(formData.sanction_letter_file_path)}>
                     <Eye className="w-4 h-4" />
                   </Button>
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    onClick={() =>
-                      downloadFile(
-                        formData.sanction_letter_file_path,
-                        formData.sanction_letter_file_name
-                      )
-                    }
-                  >
+                  <Button size="sm" variant="ghost" onClick={() => downloadFile(formData.sanction_letter_file_path, formData.sanction_letter_file_name)}>
                     <Download className="w-4 h-4" />
                   </Button>
                 </div>
               )}
-              <Input
-                type="file"
-                accept="application/pdf"
-                onChange={(e) =>
-                  e.target.files &&
-                  uploadFile(e.target.files[0], "sanction")
-                }
-              />
+              <Input type="file" accept="application/pdf" onChange={e => e.target.files && uploadFile(e.target.files[0], "sanction")} />
             </div>
 
           </CardContent>
         </Card>
 
         <div className="flex justify-end gap-4">
-          <Button variant="outline" onClick={onCancel}>
-            Cancel
-          </Button>
+          <Button variant="outline" onClick={onCancel}>Cancel</Button>
           <Button type="submit" disabled={isSubmitting}>
             {isSubmitting ? "Updating…" : "Update UC Entry"}
           </Button>
         </div>
+
       </form>
     </div>
   );
