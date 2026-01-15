@@ -175,6 +175,21 @@ export const UCCard = ({
                 </div>
               </div>
 
+              {/* ✅ SANCTION DATE MOVED HERE */}
+              <div className="flex items-center space-x-2">
+                <Calendar className="h-4 w-4 text-indigo-500" />
+                <div>
+                  <p className="text-xs text-gray-500">Sanction Date</p>
+                  <p className="text-sm font-semibold">
+                    {entry.sanction_date
+                      ? new Date(entry.sanction_date)
+                          .toLocaleDateString("en-GB")
+                          .replace(/\//g, "-")
+                      : "N/A"}
+                  </p>
+                </div>
+              </div>
+
               <div className="flex items-center space-x-2">
                 <IndianRupee className="h-4 w-4 text-emerald-600" />
                 <div>

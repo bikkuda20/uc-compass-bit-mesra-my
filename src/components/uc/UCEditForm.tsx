@@ -44,6 +44,8 @@ const UCEditForm = ({ ucId, onComplete, onCancel }: UCEditFormProps) => {
     status: "Pending",
 
     sanctionNumber: "",
+    sanctionDate: "",
+
     totalSanctionAmount: "",
     programmeStartDate: "",
     programmeEndDate: "",
@@ -108,6 +110,8 @@ const UCEditForm = ({ ucId, onComplete, onCancel }: UCEditFormProps) => {
         status: data.status || "Pending",
 
         sanctionNumber: data.sanction_number || "",
+        sanctionDate: data.sanction_date || "",
+
         totalSanctionAmount: data.total_sanction_amount?.toString() || "",
         programmeStartDate: data.project_start_date || "",
         programmeEndDate: data.project_end_date || "",
@@ -220,6 +224,8 @@ const UCEditForm = ({ ucId, onComplete, onCancel }: UCEditFormProps) => {
         status: formData.status,
 
         sanction_number: formData.sanctionNumber || null,
+        sanction_date: formData.sanctionDate || null,
+
         total_sanction_amount: parseFloat(formData.totalSanctionAmount) || null,
         project_start_date: formData.programmeStartDate || null,
         project_end_date: formData.programmeEndDate || null,
@@ -228,11 +234,6 @@ const UCEditForm = ({ ucId, onComplete, onCancel }: UCEditFormProps) => {
         non_recurring_balance: parseFloat(formData.nonRecurringBalance) || 0,
         interest_earned: parseFloat(formData.interestEarned) || 0,
         interest_refunded: parseFloat(formData.interestRefunded) || 0,
-        total_balance:
-          (parseFloat(formData.recurringBalance) || 0) +
-          (parseFloat(formData.nonRecurringBalance) || 0) +
-          (parseFloat(formData.interestEarned) || 0) +
-          (parseFloat(formData.interestRefunded) || 0),
 
         uc_received_date: formData.ucReceivedDate || null,
         uc_verified_date: formData.ucVerifiedDate || null,
@@ -323,6 +324,10 @@ const UCEditForm = ({ ucId, onComplete, onCancel }: UCEditFormProps) => {
 
               <Label>Sanction Number</Label>
               <Input value={formData.sanctionNumber} onChange={e => handleInputChange("sanctionNumber", e.target.value)} />
+
+              {/* ✅ ONLY ADDITION */}
+              <Label>Sanction Date</Label>
+              <Input type="date" value={formData.sanctionDate} onChange={e => handleInputChange("sanctionDate", e.target.value)} />
 
               <Label>Total Sanction Amount (₹)</Label>
               <Input type="number" value={formData.totalSanctionAmount} onChange={e => handleInputChange("totalSanctionAmount", e.target.value)} />
