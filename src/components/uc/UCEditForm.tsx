@@ -40,7 +40,7 @@ const UCEditForm = ({ ucId, onComplete, onCancel }: UCEditFormProps) => {
     projectTitle: "",
     projectCode: "",
     ucEntryNo: "",
-    projectType: "Project",
+    projectType: "Project", // ✅ already existed
     status: "Pending",
 
     sanctionNumber: "",
@@ -125,7 +125,8 @@ const UCEditForm = ({ ucId, onComplete, onCancel }: UCEditFormProps) => {
         ucReceivedDate: data.uc_received_date || "",
         ucVerifiedDate: data.uc_verified_date || "",
         ucCheckedArFinanceDate: data.uc_checked_ar_finance_date || "",
-        ucSentDeputyComptrollerDate: data.uc_sent_deputy_comptroller_date || "",
+        ucSentDeputyComptrollerDate:
+          data.uc_sent_deputy_comptroller_date || "",
         ucSentRegistrarDate: data.uc_sent_registrar_date || "",
         ucReturnedRegistrarDate: data.uc_returned_registrar_date || "",
         ucHandedOverPiDate: data.uc_handed_over_pi_date || "",
@@ -144,7 +145,7 @@ const UCEditForm = ({ ucId, onComplete, onCancel }: UCEditFormProps) => {
 
   /* ================= INPUT HANDLER ================= */
   const handleInputChange = (field: string, value: string) => {
-    setFormData(prev => {
+    setFormData((prev) => {
       const updated = { ...prev, [field]: value };
 
       if (
@@ -220,28 +221,36 @@ const UCEditForm = ({ ucId, onComplete, onCancel }: UCEditFormProps) => {
         project_title: formData.projectTitle || null,
         project_code: formData.projectCode,
         uc_entry_no: formData.ucEntryNo || null,
-        project_type: formData.projectType,
+        project_type: formData.projectType, // ✅ already wired
         status: formData.status,
 
         sanction_number: formData.sanctionNumber || null,
         sanction_date: formData.sanctionDate || null,
 
-        total_sanction_amount: parseFloat(formData.totalSanctionAmount) || null,
+        total_sanction_amount:
+          parseFloat(formData.totalSanctionAmount) || null,
         project_start_date: formData.programmeStartDate || null,
         project_end_date: formData.programmeEndDate || null,
 
         recurring_balance: parseFloat(formData.recurringBalance) || 0,
-        non_recurring_balance: parseFloat(formData.nonRecurringBalance) || 0,
+        non_recurring_balance:
+          parseFloat(formData.nonRecurringBalance) || 0,
         interest_earned: parseFloat(formData.interestEarned) || 0,
-        interest_refunded: parseFloat(formData.interestRefunded) || 0,
+        interest_refunded:
+          parseFloat(formData.interestRefunded) || 0,
 
         uc_received_date: formData.ucReceivedDate || null,
         uc_verified_date: formData.ucVerifiedDate || null,
-        uc_checked_ar_finance_date: formData.ucCheckedArFinanceDate || null,
-        uc_sent_deputy_comptroller_date: formData.ucSentDeputyComptrollerDate || null,
-        uc_sent_registrar_date: formData.ucSentRegistrarDate || null,
-        uc_returned_registrar_date: formData.ucReturnedRegistrarDate || null,
-        uc_handed_over_pi_date: formData.ucHandedOverPiDate || null,
+        uc_checked_ar_finance_date:
+          formData.ucCheckedArFinanceDate || null,
+        uc_sent_deputy_comptroller_date:
+          formData.ucSentDeputyComptrollerDate || null,
+        uc_sent_registrar_date:
+          formData.ucSentRegistrarDate || null,
+        uc_returned_registrar_date:
+          formData.ucReturnedRegistrarDate || null,
+        uc_handed_over_pi_date:
+          formData.ucHandedOverPiDate || null,
 
         updated_at: new Date().toISOString(),
       })
@@ -274,81 +283,192 @@ const UCEditForm = ({ ucId, onComplete, onCancel }: UCEditFormProps) => {
             <CardContent className="space-y-4">
 
               <Label>Funding Agency *</Label>
-              <Select value={formData.fundingAgencyId} onValueChange={v => handleInputChange("fundingAgencyId", v)}>
+              <Select
+                value={formData.fundingAgencyId}
+                onValueChange={(v) =>
+                  handleInputChange("fundingAgencyId", v)
+                }
+              >
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  {agencies.map(a => (
-                    <SelectItem key={a.id} value={a.id}>{a.name}</SelectItem>
+                  {agencies.map((a) => (
+                    <SelectItem key={a.id} value={a.id}>
+                      {a.name}
+                    </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
 
               <Label>Project Title</Label>
-              <Input value={formData.projectTitle} onChange={e => handleInputChange("projectTitle", e.target.value)} />
+              <Input
+                value={formData.projectTitle}
+                onChange={(e) =>
+                  handleInputChange("projectTitle", e.target.value)
+                }
+              />
 
               <Label>Scheme</Label>
-              <Select value={formData.schemeId} onValueChange={v => handleInputChange("schemeId", v)}>
+              <Select
+                value={formData.schemeId}
+                onValueChange={(v) =>
+                  handleInputChange("schemeId", v)
+                }
+              >
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  {schemes.map(s => (
-                    <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
+                  {schemes.map((s) => (
+                    <SelectItem key={s.id} value={s.id}>
+                      {s.name}
+                    </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
 
               <Label>Financial Year *</Label>
-              <Select value={formData.financialYearId} onValueChange={v => handleInputChange("financialYearId", v)}>
+              <Select
+                value={formData.financialYearId}
+                onValueChange={(v) =>
+                  handleInputChange("financialYearId", v)
+                }
+              >
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  {years.map(y => (
-                    <SelectItem key={y.id} value={y.id}>{y.year}</SelectItem>
+                  {years.map((y) => (
+                    <SelectItem key={y.id} value={y.id}>
+                      {y.year}
+                    </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
 
               <Label>Principal Investigator *</Label>
-              <Select value={formData.piId} onValueChange={v => handleInputChange("piId", v)}>
+              <Select
+                value={formData.piId}
+                onValueChange={(v) =>
+                  handleInputChange("piId", v)
+                }
+              >
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  {pis.map(pi => (
-                    <SelectItem key={pi.id} value={pi.id}>{pi.name}</SelectItem>
+                  {pis.map((pi) => (
+                    <SelectItem key={pi.id} value={pi.id}>
+                      {pi.name}
+                    </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
 
               <Label>Project Code *</Label>
-              <Input value={formData.projectCode} onChange={e => handleInputChange("projectCode", e.target.value)} />
+              <Input
+                value={formData.projectCode}
+                onChange={(e) =>
+                  handleInputChange("projectCode", e.target.value)
+                }
+              />
 
               <Label>UC Entry No</Label>
-              <Input value={formData.ucEntryNo} onChange={e => handleInputChange("ucEntryNo", e.target.value)} />
+              <Input
+                value={formData.ucEntryNo}
+                onChange={(e) =>
+                  handleInputChange("ucEntryNo", e.target.value)
+                }
+              />
+
+              {/* ✅ NEW FIELD — PROJECT TYPE */}
+              <Label>Project Type *</Label>
+              <Select
+                value={formData.projectType}
+                onValueChange={(v) =>
+                  handleInputChange("projectType", v)
+                }
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Project">Project</SelectItem>
+                  <SelectItem value="Workshop">Workshop</SelectItem>
+                  <SelectItem value="Conference">Conference</SelectItem>
+                  <SelectItem value="Seminar">Seminar</SelectItem>
+                  <SelectItem value="Symposium">Symposium</SelectItem>
+                </SelectContent>
+              </Select>
 
               <Label>Sanction Number</Label>
-              <Input value={formData.sanctionNumber} onChange={e => handleInputChange("sanctionNumber", e.target.value)} />
+              <Input
+                value={formData.sanctionNumber}
+                onChange={(e) =>
+                  handleInputChange("sanctionNumber", e.target.value)
+                }
+              />
 
-              {/* ✅ ONLY ADDITION */}
               <Label>Sanction Date</Label>
-              <Input type="date" value={formData.sanctionDate} onChange={e => handleInputChange("sanctionDate", e.target.value)} />
+              <Input
+                type="date"
+                value={formData.sanctionDate}
+                onChange={(e) =>
+                  handleInputChange("sanctionDate", e.target.value)
+                }
+              />
 
               <Label>Total Sanction Amount (₹)</Label>
-              <Input type="number" value={formData.totalSanctionAmount} onChange={e => handleInputChange("totalSanctionAmount", e.target.value)} />
+              <Input
+                type="number"
+                value={formData.totalSanctionAmount}
+                onChange={(e) =>
+                  handleInputChange("totalSanctionAmount", e.target.value)
+                }
+              />
 
               <Label>Programme Start Date</Label>
-              <Input type="date" value={formData.programmeStartDate} onChange={e => handleInputChange("programmeStartDate", e.target.value)} />
+              <Input
+                type="date"
+                value={formData.programmeStartDate}
+                onChange={(e) =>
+                  handleInputChange("programmeStartDate", e.target.value)
+                }
+              />
 
               <Label>Programme End Date</Label>
-              <Input type="date" value={formData.programmeEndDate} onChange={e => handleInputChange("programmeEndDate", e.target.value)} />
+              <Input
+                type="date"
+                value={formData.programmeEndDate}
+                onChange={(e) =>
+                  handleInputChange("programmeEndDate", e.target.value)
+                }
+              />
 
               <Label>Recurring Balance (₹)</Label>
-              <Input value={formData.recurringBalance} onChange={e => handleInputChange("recurringBalance", e.target.value)} />
+              <Input
+                value={formData.recurringBalance}
+                onChange={(e) =>
+                  handleInputChange("recurringBalance", e.target.value)
+                }
+              />
 
               <Label>Non-Recurring Balance (₹)</Label>
-              <Input value={formData.nonRecurringBalance} onChange={e => handleInputChange("nonRecurringBalance", e.target.value)} />
+              <Input
+                value={formData.nonRecurringBalance}
+                onChange={(e) =>
+                  handleInputChange("nonRecurringBalance", e.target.value)
+                }
+              />
 
               <Label>Interest Earned (₹)</Label>
-              <Input value={formData.interestEarned} onChange={e => handleInputChange("interestEarned", e.target.value)} />
+              <Input
+                value={formData.interestEarned}
+                onChange={(e) =>
+                  handleInputChange("interestEarned", e.target.value)
+                }
+              />
 
               <Label>Interest Refunded (₹)</Label>
-              <Input value={formData.interestRefunded} onChange={e => handleInputChange("interestRefunded", e.target.value)} />
+              <Input
+                value={formData.interestRefunded}
+                onChange={(e) =>
+                  handleInputChange("interestRefunded", e.target.value)
+                }
+              />
 
               <Label>Total Balance (₹)</Label>
               <Input value={formData.totalBalance} readOnly />
@@ -369,13 +489,15 @@ const UCEditForm = ({ ucId, onComplete, onCancel }: UCEditFormProps) => {
                 "ucSentRegistrarDate",
                 "ucReturnedRegistrarDate",
                 "ucHandedOverPiDate",
-              ].map(field => (
+              ].map((field) => (
                 <div key={field}>
                   <Label>{field.replace(/([A-Z])/g, " $1")}</Label>
                   <Input
                     type="date"
                     value={formData[field]}
-                    onChange={e => handleInputChange(field, e.target.value)}
+                    onChange={(e) =>
+                      handleInputChange(field, e.target.value)
+                    }
                   />
                 </div>
               ))}
@@ -397,15 +519,37 @@ const UCEditForm = ({ ucId, onComplete, onCancel }: UCEditFormProps) => {
                 <div className="flex items-center gap-3 mb-2">
                   <FileText className="w-4 h-4" />
                   <span>{formData.uc_file_name}</span>
-                  <Button size="sm" variant="ghost" onClick={() => previewFile(formData.uc_file_path)}>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={() =>
+                      previewFile(formData.uc_file_path)
+                    }
+                  >
                     <Eye className="w-4 h-4" />
                   </Button>
-                  <Button size="sm" variant="ghost" onClick={() => downloadFile(formData.uc_file_path, formData.uc_file_name)}>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={() =>
+                      downloadFile(
+                        formData.uc_file_path,
+                        formData.uc_file_name
+                      )
+                    }
+                  >
                     <Download className="w-4 h-4" />
                   </Button>
                 </div>
               )}
-              <Input type="file" accept="application/pdf" onChange={e => e.target.files && uploadFile(e.target.files[0], "uc")} />
+              <Input
+                type="file"
+                accept="application/pdf"
+                onChange={(e) =>
+                  e.target.files &&
+                  uploadFile(e.target.files[0], "uc")
+                }
+              />
             </div>
 
             <div>
@@ -413,23 +557,51 @@ const UCEditForm = ({ ucId, onComplete, onCancel }: UCEditFormProps) => {
               {formData.sanction_letter_file_path && (
                 <div className="flex items-center gap-3 mb-2">
                   <FileText className="w-4 h-4" />
-                  <span>{formData.sanction_letter_file_name}</span>
-                  <Button size="sm" variant="ghost" onClick={() => previewFile(formData.sanction_letter_file_path)}>
+                  <span>
+                    {formData.sanction_letter_file_name}
+                  </span>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={() =>
+                      previewFile(
+                        formData.sanction_letter_file_path
+                      )
+                    }
+                  >
                     <Eye className="w-4 h-4" />
                   </Button>
-                  <Button size="sm" variant="ghost" onClick={() => downloadFile(formData.sanction_letter_file_path, formData.sanction_letter_file_name)}>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={() =>
+                      downloadFile(
+                        formData.sanction_letter_file_path,
+                        formData.sanction_letter_file_name
+                      )
+                    }
+                  >
                     <Download className="w-4 h-4" />
                   </Button>
                 </div>
               )}
-              <Input type="file" accept="application/pdf" onChange={e => e.target.files && uploadFile(e.target.files[0], "sanction")} />
+              <Input
+                type="file"
+                accept="application/pdf"
+                onChange={(e) =>
+                  e.target.files &&
+                  uploadFile(e.target.files[0], "sanction")
+                }
+              />
             </div>
 
           </CardContent>
         </Card>
 
         <div className="flex justify-end gap-4">
-          <Button variant="outline" onClick={onCancel}>Cancel</Button>
+          <Button variant="outline" onClick={onCancel}>
+            Cancel
+          </Button>
           <Button type="submit" disabled={isSubmitting}>
             {isSubmitting ? "Updating…" : "Update UC Entry"}
           </Button>
