@@ -33,7 +33,7 @@ const UCFileManager = () => {
     useState<{ filePath: string; fileName: string } | null>(null);
 
   /* ===========================
-     🔍 FILTER LOGIC (FINAL)
+     🔍 FILTER LOGIC (FIXED)
      =========================== */
   const filteredUCs = ucs.filter((uc) => {
     const matchesYear =
@@ -47,7 +47,7 @@ const UCFileManager = () => {
       uc.project_title?.toLowerCase().includes(search) ||
       uc.principal_investigator?.name?.toLowerCase().includes(search) ||
       uc.funding_agency?.name?.toLowerCase().includes(search) ||
-      uc.project_type?.name?.toLowerCase().includes(search); // ✅ PROJECT TYPE ENABLED
+      uc.project_type?.toLowerCase().includes(search); // ✅ FIXED
 
     return matchesYear && matchesSearch;
   });

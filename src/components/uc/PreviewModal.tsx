@@ -1,7 +1,10 @@
 import { useEffect, useState } from "react";
-import { Dialog } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+} from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { X, Download, Loader2 } from "lucide-react";
+import { X, Download, Loader2, FileText } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
@@ -26,6 +29,7 @@ export const PreviewModal = ({
   useEffect(() => {
     const loadPreview = async () => {
       if (!filePath) return;
+
       setLoading(true);
       setError(null);
 
@@ -33,9 +37,11 @@ export const PreviewModal = ({
         const { data, error } = await supabase.storage
           .from("uc-files")
           .createSignedUrl(filePath, 3600);
+
         if (error || !data?.signedUrl) throw error;
+
         setPreviewUrl(data.signedUrl);
-      } catch (err: any) {
+      } catch {
         setError("File preview failed.");
       } finally {
         setLoading(false);
@@ -51,19 +57,27 @@ export const PreviewModal = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <div className="fixed inset-0 z-[1000] bg-white flex flex-col">
-        {/* Header */}
-        <div className="flex justify-between items-center p-4 border-b">
-          <h2 className="font-semibold text-lg">Preview: {fileName}</h2>
+      <DialogContent className="max-w-none w-screen h-screen p-0 flex flex-col bg-gray-50">
+
+        {/* ===== HEADER ===== */}
+        <div className="flex items-center justify-between px-4 py-2 border-b bg-white shadow-sm shrink-0">
+          <div className="flex items-center gap-2 min-w-0">
+            <FileText className="w-4 h-4 text-indigo-600 shrink-0" />
+            <span className="text-sm font-medium truncate">
+              {fileName}
+            </span>
+          </div>
+
           <div className="flex gap-2">
             {previewUrl && (
               <Button
-                variant="outline"
                 size="sm"
+                variant="outline"
                 onClick={async () => {
                   const response = await fetch(previewUrl);
                   const blob = await response.blob();
                   const url = URL.createObjectURL(blob);
+
                   const a = document.createElement("a");
                   a.href = url;
                   a.download = fileName;
@@ -71,43 +85,55 @@ export const PreviewModal = ({
                   a.click();
                   document.body.removeChild(a);
                   URL.revokeObjectURL(url);
-                  toast({ title: "Downloaded", description: "File saved locally." });
+
+                  toast({
+                    title: "Downloaded",
+                    description: "File saved locally.",
+                  });
                 }}
               >
                 <Download className="w-4 h-4 mr-1" />
                 Download
               </Button>
             )}
-            <Button variant="ghost" size="icon" onClick={onClose}>
+
+            <Button
+              size="icon"
+              variant="ghost"
+              onClick={onClose}
+            >
               <X className="h-5 w-5" />
             </Button>
           </div>
         </div>
 
-        {/* Body */}
-        <div className="flex-1 flex items-center justify-center bg-gray-100 overflow-hidden">
+        {/* ===== BODY ===== */}
+        <div className="flex-1 overflow-hidden bg-gray-100">
+
           {loading && (
-            <div className="flex items-center text-gray-600 gap-2">
+            <div className="h-full flex items-center justify-center gap-2 text-gray-600">
               <Loader2 className="h-6 w-6 animate-spin" />
-              Loading...
+              Loading preview...
             </div>
           )}
 
           {error && (
-            <div className="text-center text-red-600">
-              <p>{error}</p>
+            <div className="h-full flex items-center justify-center text-red-600 font-medium">
+              {error}
             </div>
           )}
 
           {previewUrl && !loading && !error && (
             <iframe
               src={previewUrl}
-              className="w-full h-full border-none"
               title={`Preview of ${fileName}`}
+              className="w-full h-full border-none bg-white"
             />
           )}
+
         </div>
-      </div>
+
+      </DialogContent>
     </Dialog>
   );
 };
