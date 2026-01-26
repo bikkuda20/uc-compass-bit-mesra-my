@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -47,52 +46,19 @@ const UserManagement = () => {
   const fetchUsers = async () => {
     try {
       setLoading(true);
-      console.log('Fetching users...');
-      
-      // First, let's check if we can connect to Supabase
-      const { data: testData, error: testError } = await supabase
-        .from('users')
-        .select('count(*)', { count: 'exact', head: true });
-      
-      console.log('Connection test:', { testData, testError });
-      
+
       const { data, error } = await supabase
-        .from('users')
-        .select('*')
-        .order('created_at', { ascending: false });
+        .from("users")
+        .select("*")
+        .order("created_at", { ascending: false });
 
-      console.log('Users query result:', { data, error });
-
-      if (error) {
-        console.error('Error fetching users:', error);
-        
-        // If it's an RLS policy issue, show a more helpful message
-        if (error.code === 'PGRST116' || error.message.includes('policy')) {
-          toast({
-            title: "Access Restricted",
-            description: "You don't have permission to view users. Admin access required.",
-            variant: "destructive",
-          });
-        } else {
-          toast({
-            title: "Error",
-            description: `Failed to fetch users: ${error.message}`,
-            variant: "destructive",
-          });
-        }
-        return;
-      }
+      if (error) throw error;
 
       setUsers(data || []);
-      toast({
-        title: "Success",
-        description: `Loaded ${data?.length || 0} users`,
-      });
     } catch (error: any) {
-      console.error('Error fetching users:', error);
       toast({
         title: "Error",
-        description: `Failed to fetch users: ${error.message}`,
+        description: error.message || "Failed to fetch users",
         variant: "destructive",
       });
     } finally {
@@ -100,14 +66,34 @@ const UserManagement = () => {
     }
   };
 
+  /* 🔐 PASSWORD RESET (ONLY ADDITION) */
+  const sendPasswordReset = async (email: string) => {
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${window.location.origin}/`,
+    });
+
+    if (error) {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+      return;
+    }
+
+    toast({
+      title: "Password Reset Sent",
+      description: `Reset link sent to ${email}`,
+    });
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     try {
       if (editingUser) {
-        // Update existing user
         const { error } = await supabase
-          .from('users')
+          .from("users")
           .update({
             email: formData.email,
             full_name: formData.full_name,
@@ -115,57 +101,32 @@ const UserManagement = () => {
             is_active: formData.is_active,
             updated_at: new Date().toISOString(),
           })
-          .eq('id', editingUser.id);
+          .eq("id", editingUser.id);
 
-        if (error) {
-          throw error;
-        }
+        if (error) throw error;
 
-        toast({
-          title: "Success",
-          description: "User updated successfully",
-        });
+        toast({ title: "User updated successfully" });
       } else {
-        // Create new user - the trigger will automatically create the profile
         if (!formData.password) {
-          throw new Error("Password is required for new users");
+          throw new Error("Password is required");
         }
 
-        console.log('Creating new user with email:', formData.email);
+        const { error } = await supabase.auth.signUp({
+  email: formData.email,
+  password: formData.password,
+  options: {
+    data: {
+      full_name: formData.full_name || null,
+      role: formData.role || "user",
+      is_active: true,
+    },
+    emailRedirectTo: `${window.location.origin}/`,
+  },
+});
+        if (error) throw error;
 
-        // Create auth user - trigger will handle profile creation
-        const { data: authData, error: authError } = await supabase.auth.signUp({
-          email: formData.email,
-          password: formData.password,
-          options: {
-            data: {
-              full_name: formData.full_name,
-              role: formData.role,
-            },
-            emailRedirectTo: `${window.location.origin}/`
-          }
-        });
-
-        if (authError) {
-          console.error('Auth creation error:', authError);
-          throw authError;
-        }
-
-        if (!authData.user) {
-          throw new Error("Failed to create user");
-        }
-
-        console.log('Auth user created:', authData.user.id);
-
-        toast({
-          title: "Success",
-          description: "User created successfully",
-        });
-
-        // Wait a moment for the trigger to complete, then refresh
-        setTimeout(() => {
-          fetchUsers();
-        }, 1000);
+        toast({ title: "User created successfully" });
+        setTimeout(fetchUsers, 1000);
       }
 
       setIsDialogOpen(false);
@@ -178,7 +139,6 @@ const UserManagement = () => {
         password: "",
       });
     } catch (error: any) {
-      console.error('Error saving user:', error);
       toast({
         title: "Error",
         description: error.message || "Failed to save user",
@@ -194,7 +154,7 @@ const UserManagement = () => {
       full_name: user.full_name || "",
       role: user.role,
       is_active: user.is_active,
-      password: "", // Don't populate password for editing
+      password: "",
     });
     setIsDialogOpen(true);
   };
@@ -203,24 +163,12 @@ const UserManagement = () => {
     if (!confirm("Are you sure you want to delete this user?")) return;
 
     try {
-      const { error } = await supabase
-        .from('users')
-        .delete()
-        .eq('id', userId);
+      const { error } = await supabase.from("users").delete().eq("id", userId);
+      if (error) throw error;
 
-      if (error) {
-        throw error;
-      }
-
-      toast({
-        title: "Success",
-        description: "User deleted successfully",
-      });
-
-      // Refresh the users list
+      toast({ title: "User deleted successfully" });
       fetchUsers();
     } catch (error: any) {
-      console.error('Error deleting user:', error);
       toast({
         title: "Error",
         description: error.message || "Failed to delete user",
@@ -229,214 +177,196 @@ const UserManagement = () => {
     }
   };
 
-  const getRoleBadge = (role: string) => {
-    return (
-      <Badge variant={role === 'admin' ? 'default' : 'secondary'}>
-        {role.charAt(0).toUpperCase() + role.slice(1)}
-      </Badge>
-    );
-  };
-
-  const getStatusBadge = (isActive: boolean) => {
-    return (
-      <Badge variant={isActive ? 'default' : 'destructive'}>
-        {isActive ? 'Active' : 'Inactive'}
-      </Badge>
-    );
-  };
-
   if (loading) {
-    return (
-      <SidebarProvider>
-        <div className="min-h-screen flex w-full bg-gradient-to-br from-blue-50 via-white to-green-50">
-          <Sidebar />
-          <SidebarInset>
-            <div className="flex-1 ml-64">
-              <div className="flex items-center justify-center h-64">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-                <span className="ml-2">Loading users...</span>
-              </div>
-            </div>
-          </SidebarInset>
-        </div>
-      </SidebarProvider>
-    );
+    return <div className="p-6">Loading users...</div>;
   }
 
   return (
     <SidebarProvider>
-      <div className="min-h-screen flex w-full bg-gradient-to-br from-blue-50 via-white to-green-50">
+      <div className="min-h-screen flex w-full">
         <Sidebar />
         <SidebarInset>
-          <div className="flex-1 ml-64">
-            <div className="p-6 space-y-6">
-              <div className="flex items-center justify-between mb-8">
-                <div className="flex items-center space-x-4">
-                  <Button
-                    variant="outline"
-                    onClick={() => navigate('/')}
-                    className="flex items-center space-x-2"
-                  >
-                    <ArrowLeft className="w-4 h-4" />
-                    <span>Back to Dashboard</span>
-                  </Button>
-                  <div>
-                    <h1 className="text-3xl font-bold text-gray-900">User Management</h1>
-                    <p className="text-gray-600">Manage system users and their permissions</p>
-                  </div>
-                </div>
-                
-                <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-                  <DialogTrigger asChild>
-                    <Button className="flex items-center space-x-2">
-                      <Plus className="w-4 h-4" />
-                      <span>Add User</span>
-                    </Button>
-                  </DialogTrigger>
-                  <DialogContent>
-                    <DialogHeader>
-                      <DialogTitle>{editingUser ? 'Edit User' : 'Add New User'}</DialogTitle>
-                    </DialogHeader>
-                    <form onSubmit={handleSubmit} className="space-y-4">
-                      <div>
-                        <Label htmlFor="email">Email *</Label>
-                        <Input
-                          id="email"
-                          type="email"
-                          value={formData.email}
-                          onChange={(e) => setFormData({...formData, email: e.target.value})}
-                          required
-                        />
-                      </div>
-                      <div>
-                        <Label htmlFor="full_name">Full Name</Label>
-                        <Input
-                          id="full_name"
-                          value={formData.full_name}
-                          onChange={(e) => setFormData({...formData, full_name: e.target.value})}
-                        />
-                      </div>
-                      {!editingUser && (
-                        <div>
-                          <Label htmlFor="password">Password *</Label>
-                          <Input
-                            id="password"
-                            type="password"
-                            value={formData.password}
-                            onChange={(e) => setFormData({...formData, password: e.target.value})}
-                            required
-                            placeholder="Enter password for new user"
-                          />
-                        </div>
-                      )}
-                      <div>
-                        <Label htmlFor="role">Role *</Label>
-                        <Select 
-                          value={formData.role} 
-                          onValueChange={(value) => setFormData({...formData, role: value})}
-                        >
-                          <SelectTrigger>
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="user">User</SelectItem>
-                            <SelectItem value="admin">Admin</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      <div>
-                        <Label htmlFor="is_active">Status</Label>
-                        <Select 
-                          value={formData.is_active.toString()} 
-                          onValueChange={(value) => setFormData({...formData, is_active: value === 'true'})}
-                        >
-                          <SelectTrigger>
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="true">Active</SelectItem>
-                            <SelectItem value="false">Inactive</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      <div className="flex justify-end space-x-2">
-                        <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)}>
-                          Cancel
-                        </Button>
-                        <Button type="submit">
-                          {editingUser ? 'Update' : 'Create'} User
-                        </Button>
-                      </div>
-                    </form>
-                  </DialogContent>
-                </Dialog>
-              </div>
+          <div className="flex-1 ml-64 p-6 space-y-6">
 
-              <Card className="shadow-lg border-0">
-                <CardHeader>
-                  <CardTitle className="flex items-center">
-                    <Users className="w-5 h-5 mr-2 text-blue-600" />
-                    System Users ({users.length})
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="p-0">
-                  <div className="overflow-x-auto">
-                    <Table>
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead>Email</TableHead>
-                          <TableHead>Full Name</TableHead>
-                          <TableHead>Role</TableHead>
-                          <TableHead>Status</TableHead>
-                          <TableHead>Created</TableHead>
-                          <TableHead>Actions</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {users.length > 0 ? (
-                          users.map((user) => (
-                            <TableRow key={user.id} className="hover:bg-gray-50">
-                              <TableCell className="font-medium">{user.email}</TableCell>
-                              <TableCell>{user.full_name || 'N/A'}</TableCell>
-                              <TableCell>{getRoleBadge(user.role)}</TableCell>
-                              <TableCell>{getStatusBadge(user.is_active)}</TableCell>
-                              <TableCell>{new Date(user.created_at).toLocaleDateString()}</TableCell>
-                              <TableCell>
-                                <div className="flex space-x-1">
-                                  <Button
-                                    size="sm"
-                                    variant="outline"
-                                    onClick={() => handleEdit(user)}
-                                    className="flex items-center"
-                                  >
-                                    <Edit2 className="w-3 h-3" />
-                                  </Button>
-                                  <Button
-                                    size="sm"
-                                    variant="outline"
-                                    onClick={() => handleDelete(user.id)}
-                                    className="flex items-center text-red-600 hover:text-red-700"
-                                  >
-                                    <Trash2 className="w-3 h-3" />
-                                  </Button>
-                                </div>
-                              </TableCell>
-                            </TableRow>
-                          ))
-                        ) : (
-                          <TableRow>
-                            <TableCell colSpan={6} className="text-center py-8">
-                              <Users className="w-12 h-12 mx-auto text-gray-400 mb-4" />
-                              <p className="text-gray-500">No users found</p>
-                            </TableCell>
-                          </TableRow>
-                        )}
-                      </TableBody>
-                    </Table>
+            <Button variant="outline" onClick={() => navigate("/")}>
+              <ArrowLeft className="w-4 h-4 mr-2" />
+              Back to Dashboard
+            </Button>
+
+            <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+              <DialogTrigger asChild>
+                <Button>
+                  <Plus className="w-4 h-4 mr-2" /> Add User
+                </Button>
+              </DialogTrigger>
+
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>
+                    {editingUser ? "Edit User" : "Add New User"}
+                  </DialogTitle>
+                </DialogHeader>
+
+                <form onSubmit={handleSubmit} className="space-y-4">
+                  <div>
+                    <Label>Email *</Label>
+                    <Input
+                      type="email"
+                      value={formData.email}
+                      onChange={e =>
+                        setFormData({ ...formData, email: e.target.value })
+                      }
+                      required
+                    />
                   </div>
-                </CardContent>
-              </Card>
-            </div>
+
+                  <div>
+                    <Label>Full Name</Label>
+                    <Input
+                      value={formData.full_name}
+                      onChange={e =>
+                        setFormData({ ...formData, full_name: e.target.value })
+                      }
+                    />
+                  </div>
+
+                  {!editingUser && (
+                    <div>
+                      <Label>Password *</Label>
+                      <Input
+                        type="password"
+                        value={formData.password}
+                        onChange={e =>
+                          setFormData({ ...formData, password: e.target.value })
+                        }
+                        required
+                      />
+                    </div>
+                  )}
+
+                  {editingUser && (
+                    <div>
+                      <Label>Password</Label>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        className="w-full"
+                        onClick={() =>
+                          sendPasswordReset(editingUser.email)
+                        }
+                      >
+                        Send Password Reset Email
+                      </Button>
+                    </div>
+                  )}
+
+                  <div>
+                    <Label>Role</Label>
+                    <Select
+                      value={formData.role}
+                      onValueChange={v =>
+                        setFormData({ ...formData, role: v })
+                      }
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="user">User</SelectItem>
+                        <SelectItem value="admin">Admin</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div>
+                    <Label>Status</Label>
+                    <Select
+                      value={formData.is_active.toString()}
+                      onValueChange={v =>
+                        setFormData({
+                          ...formData,
+                          is_active: v === "true",
+                        })
+                      }
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="true">Active</SelectItem>
+                        <SelectItem value="false">Inactive</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="flex justify-end gap-2">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => setIsDialogOpen(false)}
+                    >
+                      Cancel
+                    </Button>
+                    <Button type="submit">
+                      {editingUser ? "Update" : "Create"} User
+                    </Button>
+                  </div>
+                </form>
+              </DialogContent>
+            </Dialog>
+
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center">
+                  <Users className="w-5 h-5 mr-2" />
+                  System Users ({users.length})
+                </CardTitle>
+              </CardHeader>
+
+              <CardContent className="p-0">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Email</TableHead>
+                      <TableHead>Name</TableHead>
+                      <TableHead>Role</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead>Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {users.map(user => (
+                      <TableRow key={user.id}>
+                        <TableCell>{user.email}</TableCell>
+                        <TableCell>{user.full_name || "N/A"}</TableCell>
+                        <TableCell>
+                          <Badge>{user.role}</Badge>
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant={user.is_active ? "default" : "destructive"}>
+                            {user.is_active ? "Active" : "Inactive"}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="flex gap-2">
+                          <Button size="sm" variant="outline" onClick={() => handleEdit(user)}>
+                            <Edit2 className="w-3 h-3" />
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="text-red-600"
+                            onClick={() => handleDelete(user.id)}
+                          >
+                            <Trash2 className="w-3 h-3" />
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </CardContent>
+            </Card>
+
           </div>
         </SidebarInset>
       </div>

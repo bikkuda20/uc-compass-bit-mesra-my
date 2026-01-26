@@ -27,11 +27,11 @@ import UCProgressTracker from "./UCProgressTracker";
 import UCDetailsModal from "./UCDetailsModal";
 
 interface UCListProps {
-  onEditTracker?: (ucId: string) => void;
+  onEditUC?: (ucId: string) => void;
   onCreateUC?: () => void;
 }
 
-const UCList = ({ onEditTracker, onCreateUC }: UCListProps) => {
+const UCList = ({ onEditUC, onCreateUC }: UCListProps) => {
   const { ucs, loading, refetch, deleteUCEntry } = useUCEntries();
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
@@ -114,7 +114,7 @@ const UCList = ({ onEditTracker, onCreateUC }: UCListProps) => {
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All Status</SelectItem>
-            <SelectItem value="Received from PI">Received</SelectItem>
+            <SelectItem value="UC Received by PI">Received</SelectItem>
             <SelectItem value="Verified by Related Person">Verified</SelectItem>
             <SelectItem value="Checked by AR Finance">AR Finance</SelectItem>
             <SelectItem value="Sent to Deputy Comptroller">Deputy</SelectItem>
@@ -215,7 +215,7 @@ const UCList = ({ onEditTracker, onCreateUC }: UCListProps) => {
                 <Button
                   size="sm"
                   variant="outline"
-                  onClick={() => onEditTracker?.(uc.id)}
+                  onClick={() => onEditUC?.(uc.id)}
                 >
                   <Edit className="w-4 h-4 mr-1" />
                   Edit

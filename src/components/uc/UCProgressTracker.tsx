@@ -1,6 +1,7 @@
-
 import { CheckCircle, Circle, Clock } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
 
 interface UCProgressTrackerProps {
   uc: any;
@@ -9,12 +10,14 @@ interface UCProgressTrackerProps {
   size?: "sm" | "md" | "lg";
 }
 
-const UCProgressTracker = ({ 
-  uc, 
-  variant = "horizontal", 
+const UCProgressTracker = ({
+  uc,
+  variant = "horizontal",
   showLabels = true,
-  size = "md" 
+  size = "md",
 }: UCProgressTrackerProps) => {
+  const { toast } = useToast();
+
   const steps = [
     {
       key: "uc_received_date",
@@ -23,14 +26,14 @@ const UCProgressTracker = ({
       date: uc?.uc_received_date,
     },
     {
-      key: "uc_verified_date", 
+      key: "uc_verified_date",
       label: "Verified by Related Person",
       shortLabel: "Verified",
       date: uc?.uc_verified_date,
     },
     {
       key: "uc_checked_ar_finance_date",
-      label: "Checked by AR Finance", 
+      label: "Checked by AR Finance",
       shortLabel: "AR Finance",
       date: uc?.uc_checked_ar_finance_date,
     },
@@ -49,7 +52,7 @@ const UCProgressTracker = ({
     {
       key: "uc_returned_registrar_date",
       label: "Returned from Registrar Office",
-      shortLabel: "From Registrar", 
+      shortLabel: "From Registrar",
       date: uc?.uc_returned_registrar_date,
     },
     {
@@ -60,18 +63,48 @@ const UCProgressTracker = ({
     },
   ];
 
+  const handleStepClick = async (step: any) => {
+    try {
+      if (step.date) return;
+
+      const updates: any = {
+        [step.key]: new Date().toISOString(),
+        current_status: step.label,
+      };
+
+      const { error } = await supabase
+        .from("uc_entries")
+        .update(updates)
+        .eq("id", uc.id);
+
+      if (error) throw error;
+
+      toast({
+        title: "Stage Updated",
+        description: step.label,
+      });
+
+      window.location.reload();
+    } catch (err: any) {
+      toast({
+        title: "Update failed",
+        description: err.message,
+        variant: "destructive",
+      });
+    }
+  };
+
   const getStepStatus = (stepIndex: number) => {
     const step = steps[stepIndex];
     if (step.date) return "completed";
-    
-    // Find the first incomplete step to mark as current
+
     for (let i = 0; i < steps.length; i++) {
       if (!steps[i].date) {
         if (i === stepIndex) return "current";
         break;
       }
     }
-    
+
     return "pending";
   };
 
@@ -82,13 +115,13 @@ const UCProgressTracker = ({
       connector: "h-0.5",
     },
     md: {
-      circle: "w-8 h-8", 
+      circle: "w-8 h-8",
       text: "text-sm",
       connector: "h-1",
     },
     lg: {
       circle: "w-10 h-10",
-      text: "text-base", 
+      text: "text-base",
       connector: "h-1.5",
     },
   };
@@ -101,13 +134,18 @@ const UCProgressTracker = ({
           return (
             <div key={step.key} className="flex items-start space-x-3">
               <div className="flex flex-col items-center">
-                <div className={cn(
-                  "rounded-full flex items-center justify-center transition-all duration-300",
-                  sizeClasses[size].circle,
-                  status === "completed" && "bg-green-500 text-white shadow-lg",
-                  status === "current" && "bg-blue-500 text-white shadow-lg animate-pulse",
-                  status === "pending" && "bg-gray-200 text-gray-400"
-                )}>
+                <div
+                  onClick={() => handleStepClick(step)}
+                  className={cn(
+                    "cursor-pointer hover:scale-105 rounded-full flex items-center justify-center transition-all duration-300",
+                    sizeClasses[size].circle,
+                    status === "completed" &&
+                      "bg-green-500 text-white shadow-lg",
+                    status === "current" &&
+                      "bg-blue-500 text-white shadow-lg animate-pulse",
+                    status === "pending" && "bg-gray-200 text-gray-400"
+                  )}
+                >
                   {status === "completed" ? (
                     <CheckCircle className="w-4 h-4" />
                   ) : status === "current" ? (
@@ -116,24 +154,32 @@ const UCProgressTracker = ({
                     <Circle className="w-4 h-4" />
                   )}
                 </div>
+
                 {index < steps.length - 1 && (
-                  <div className={cn(
-                    "w-0.5 mt-2 transition-all duration-300",
-                    "h-8",
-                    status === "completed" ? "bg-green-300" : "bg-gray-200"
-                  )} />
+                  <div
+                    className={cn(
+                      "w-0.5 mt-2 transition-all duration-300 h-8",
+                      status === "completed"
+                        ? "bg-green-300"
+                        : "bg-gray-200"
+                    )}
+                  />
                 )}
               </div>
+
               <div className="flex-1 min-w-0">
-                <div className={cn(
-                  "font-medium transition-colors duration-300",
-                  sizeClasses[size].text,
-                  status === "completed" && "text-green-700",
-                  status === "current" && "text-blue-700", 
-                  status === "pending" && "text-gray-500"
-                )}>
+                <div
+                  className={cn(
+                    "font-medium transition-colors duration-300",
+                    sizeClasses[size].text,
+                    status === "completed" && "text-green-700",
+                    status === "current" && "text-blue-700",
+                    status === "pending" && "text-gray-500"
+                  )}
+                >
                   {showLabels ? step.label : step.shortLabel}
                 </div>
+
                 {step.date && (
                   <div className="text-xs text-gray-500 mt-1">
                     {new Date(step.date).toLocaleDateString()}
@@ -154,48 +200,68 @@ const UCProgressTracker = ({
         return (
           <div key={step.key} className="flex items-center">
             <div className="flex flex-col items-center group">
-              <div className={cn(
-                "rounded-full flex items-center justify-center transition-all duration-300",
-                sizeClasses[size].circle,
-                status === "completed" && "bg-green-500 text-white shadow-lg",
-                status === "current" && "bg-blue-500 text-white shadow-lg animate-pulse",
-                status === "pending" && "bg-gray-200 text-gray-400"
-              )}>
+              <div
+                onClick={() => handleStepClick(step)}
+                className={cn(
+                  "cursor-pointer hover:scale-105 rounded-full flex items-center justify-center transition-all duration-300",
+                  sizeClasses[size].circle,
+                  status === "completed" &&
+                    "bg-green-500 text-white shadow-lg",
+                  status === "current" &&
+                    "bg-blue-500 text-white shadow-lg animate-pulse",
+                  status === "pending" && "bg-gray-200 text-gray-400"
+                )}
+              >
                 {status === "completed" ? (
                   <CheckCircle className="w-3 h-3" />
                 ) : status === "current" ? (
                   <Clock className="w-3 h-3" />
                 ) : (
-                  <div className={cn(
-                    "rounded-full bg-current transition-all duration-300",
-                    size === "sm" ? "w-2 h-2" : size === "md" ? "w-2.5 h-2.5" : "w-3 h-3"
-                  )} />
+                  <div
+                    className={cn(
+                      "rounded-full bg-current transition-all duration-300",
+                      size === "sm"
+                        ? "w-2 h-2"
+                        : size === "md"
+                        ? "w-2.5 h-2.5"
+                        : "w-3 h-3"
+                    )}
+                  />
                 )}
               </div>
+
               {showLabels && (
-                <div className={cn(
-                  "mt-1 text-center font-medium transition-colors duration-300 max-w-16",
-                  sizeClasses[size].text,
-                  status === "completed" && "text-green-700",
-                  status === "current" && "text-blue-700",
-                  status === "pending" && "text-gray-500"
-                )}>
+                <div
+                  className={cn(
+                    "mt-1 text-center font-medium transition-colors duration-300 max-w-16",
+                    sizeClasses[size].text,
+                    status === "completed" && "text-green-700",
+                    status === "current" && "text-blue-700",
+                    status === "pending" && "text-gray-500"
+                  )}
+                >
                   {step.shortLabel}
                 </div>
               )}
+
               {step.date && (
                 <div className="text-xs text-gray-500 mt-1">
                   {new Date(step.date).toLocaleDateString()}
                 </div>
               )}
             </div>
+
             {index < steps.length - 1 && (
-              <div className={cn(
-                "transition-all duration-300 mx-2",
-                sizeClasses[size].connector,
-                showLabels ? "w-8" : "w-4",
-                status === "completed" ? "bg-green-300" : "bg-gray-200"
-              )} />
+              <div
+                className={cn(
+                  "transition-all duration-300 mx-2",
+                  sizeClasses[size].connector,
+                  showLabels ? "w-8" : "w-4",
+                  status === "completed"
+                    ? "bg-green-300"
+                    : "bg-gray-200"
+                )}
+              />
             )}
           </div>
         );
